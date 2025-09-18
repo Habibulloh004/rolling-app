@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.0.9+477
+version: 2.0.9+478
 
 environment:
   sdk: '>=3.2.4 <4.0.0'
@@ -49,29 +49,32 @@ dependencies:
 
 
   flutter_screenutil: ^5.9.0
-  connectivity_plus: ^3.0.3
+  connectivity_plus: ^6.0.0
   timeline_tile: ^2.0.0
   http: ^1.2.1
   dio: ^5.4.1
   hive:
   hive_flutter:
-  yandex_mapkit: ^4.1.0
-  geolocator: ^9.0.2
+  # Use locally patched plugin to fix Swift simulator check
+  yandex_mapkit:
+    path: plugins/yandex_mapkit
+  geolocator: ^14.0.2
   font_awesome_flutter: ^10.7.0
   url_launcher: ^6.2.6
   share_plus: ^11.0.0
-  intl: ^0.19.0
-  flutter_launcher_icons: ^0.13.1
+  intl: ^0.20.2
+  flutter_launcher_icons: ^0.14.4
   insta_image_viewer: ^1.0.4
-  flutter_localization: ^0.2.0
-  flutter_credit_card: ^4.0.1
+  flutter_localization: ^0.3.3
+  flutter_credit_card: ^4.1.0
   audioplayers: ^6.0.0
-  upgrader: ^7.0.0
+  upgrader: ^11.4.0
   firebase_core: ^4.0.0
   firebase_messaging: ^16.0.0
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^19.4.0
   shimmer: ^3.0.0
   liquid_pull_to_refresh: ^3.0.1
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

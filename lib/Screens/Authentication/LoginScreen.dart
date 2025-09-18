@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 10.0), // Border radius
                                           ),
                                           labelText:
-                                              '${LocaleData.phonenumber.getString(context)}',
+                                          '${LocaleData.phonenumber.getString(context)}',
                                           prefixIcon: Icon(
                                             Icons.phone,
                                             color: cBlack,
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           filled: true,
                                           fillColor: cGray,
                                           labelText:
-                                              '${LocaleData.password.getString(context)}',
+                                          '${LocaleData.password.getString(context)}',
                                           prefixIcon: Icon(
                                             Icons.lock,
                                             color: cBlack,
@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                               Navigator.pop(context);
                                             } else {
                                               String code =
-                                                  cGenerateRandomNumbers();
+                                              cGenerateRandomNumbers();
                                               Api.sendSms(
                                                   code,
                                                   "+998" +
@@ -213,10 +213,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                         child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
-                                                cDarkGreen, // Button color
+                                            cDarkGreen, // Button color
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(15),
+                                              BorderRadius.circular(15),
                                             ),
                                           ),
                                           onPressed: () async {
@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 builder: (context) {
                                                   return Center(
                                                     child:
-                                                        CircularProgressIndicator(
+                                                    CircularProgressIndicator(
                                                       color: cDarkGreen,
                                                     ),
                                                   );
@@ -237,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             final regExp = RegExp(pattern);
 
                                             if (!regExp.hasMatch("+998" +
-                                                    phoneController.text) ||
+                                                phoneController.text) ||
                                                 passwordController.text == "") {
                                               // If phone number doesn't match the pattern, show Get.snackbar
                                               Get.snackbar(
@@ -251,15 +251,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                               Navigator.pop(context);
                                             } else {
                                               Map<dynamic, dynamic> info =
-                                                  await Api.getClient(
-                                                      "+998" +
-                                                          phoneController.text,
-                                                      passwordController.text);
+                                              await Api.getClient(
+                                                  "+998" +
+                                                      phoneController.text,
+                                                  passwordController.text);
                                               print(info);
 
                                               List genderList =
-                                                  getGendersForLanguage(
-                                                      Language.getLanguage());
+                                              getGendersForLanguage(
+                                                  Language.getLanguage());
                                               String sex = genderList[int.parse(
                                                   info['client_sex'])];
 

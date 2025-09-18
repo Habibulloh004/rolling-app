@@ -9,6 +9,7 @@ import 'package:sushi_alpha_project/LocalMemory/Bonus.dart';
 import 'package:sushi_alpha_project/LocalMemory/Location.dart';
 import 'package:sushi_alpha_project/Screens/Map/map_screen.dart';
 import 'package:sushi_alpha_project/Screens/Menu/Menu.dart';
+import 'dart:convert';
 
 import '../../Backend/Api.dart';
 import '../../Consts/Functions.dart';
@@ -21,6 +22,7 @@ import '../../LocalMemory/User.dart';
 import '../../Localzition/locals.dart';
 import '../CreditCard/CardOTP.dart';
 import '../CreditCard/CreditCard.dart';
+import '../../Store/PromocodeStore.dart';
 import 'endOfOrder.dart';
 
 class PaymentAndLocationScreen extends StatefulWidget {
@@ -34,6 +36,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
   late final TabController _tabController;
   bool cash = !CreditCard.getUserChoseCard();
   bool creditCard = CreditCard.getUserChoseCard();
+  PromocodeStore get promocodeStore => Get.find<PromocodeStore>();
   late Future<int> getOrderPrice;
   String typeOfOrder = "delivery";
 
@@ -78,6 +81,74 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
     super.dispose();
   }
 
+  List<Map<String, dynamic>>? _buildPromocodeData() {
+    final activePromocode = promocodeStore.activePromocode.value;
+    if (activePromocode == null) return null;
+
+    if (activePromocode.params?.resultType == 1) {
+      // Bonus products promotion (result_type == 1)
+      return <Map<String, dynamic>>[
+        <String, dynamic>{
+          'type': 1,
+          'id': activePromocode.id,
+          'involved_products': activePromocode.params?.bonusProducts?.map((prd) => <String, dynamic>{
+            'id': int.tryParse(prd.id ?? '0') ?? 0,
+            'count': activePromocode.params?.bonusProductsPcs ?? 1,
+          }).toList() ?? <Map<String, dynamic>>[],
+        }
+      ];
+    } else {
+      // result_type 2 or 3 (fixed/percent) → type:2
+      final orders = Order.getFullOrder();
+      final conditions = activePromocode.params?.conditions ?? [];
+
+      // Web logic (order.jsx):
+      // - If condition[0].type == 0 and active and result_type == 3 → include ALL products
+      // - Else include products matching active product conditions (type == 2)
+
+      bool includeAll = false;
+      if (conditions.isNotEmpty) {
+        final c0 = conditions.first;
+        if ((c0.type == 0) == true && (c0.active == true) && (activePromocode.params?.resultType == 3)) {
+          includeAll = true;
+        }
+      }
+
+      final List<Map<String, dynamic>> regularOrders = orders
+          .where((o) => o['promocode'] != true)
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      List<Map<String, dynamic>> findProductPromotion;
+      if (includeAll) {
+        findProductPromotion = regularOrders;
+      } else {
+        findProductPromotion = <Map<String, dynamic>>[];
+        for (final order in regularOrders) {
+          for (final condition in conditions) {
+            if (condition.type == 2 &&
+                condition.active == true &&
+                condition.id == order['productId']) {
+              findProductPromotion.add(order);
+              break;
+            }
+          }
+        }
+      }
+
+      return <Map<String, dynamic>>[
+        <String, dynamic>{
+          'type': 2,
+          'id': activePromocode.id,
+          'involved_products': findProductPromotion.map((prd) => <String, dynamic>{
+            'id': int.tryParse(prd['productId']?.toString() ?? '0') ?? 0,
+            'count': int.tryParse(prd['amount']?.toString() ?? '1') ?? 1,
+          }).toList(),
+        }
+      ];
+    }
+  }
+
   List<bool> locationsBoolList = List.generate(
       MapLocation.getLength(), (index) => index == 0 ? true : false);
   int bonus = Bonus.isBonusExists() ? Bonus.getBonus('bonus')['int'] : 0;
@@ -91,6 +162,8 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Helper to format a price int with som suffix
+    String _fmt(int value) => "${makePriceSomString(value)} ${LocaleData.som.getString(context)}";
     final List<Tab> _tabs = [
       Tab(
         icon: Container(
@@ -149,17 +222,32 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
               String deliveryPriceStr = makePriceSomString(deliveryPriceInt!);
               String orderPriceStr = Order.getOrderPrice()['string'];
               int orderPriceInt = Order.getOrderPrice()['int'];
+
+              // Apply promocode discount to subtotal (without delivery/bonus)
+              int orderPriceAfterPromoInt = promocodeStore.hasActivePromocode()
+                  ? promocodeStore
+                      .getTotalPrice(orderPriceInt.toDouble())
+                      .round()
+                  : orderPriceInt;
+              if (orderPriceAfterPromoInt < 0) orderPriceAfterPromoInt = 0;
               int bonusInt = bonus;
               String bonusStr = makePriceSomString(bonus);
-              int getOrderPriceWithBonusInt = (orderPriceInt - bonus);
+              // After promocode and bonus
+              int getOrderPriceWithBonusInt =
+                  ((orderPriceAfterPromoInt - bonusInt).clamp(0, 1 << 31)).toInt();
               String getOrderPriceWithBonusStr =
                   makePriceSomString(getOrderPriceWithBonusInt);
+
+              // With delivery (before bonus) and after promo
               int getOrderPriceWithDeliveryInt =
-                  (orderPriceInt + deliveryPriceInt);
+                  (orderPriceAfterPromoInt + deliveryPriceInt);
               String getOrderPriceWithDeliveryStr =
                   makePriceSomString(getOrderPriceWithDeliveryInt);
+
+              // With delivery and bonus, after promo
               int getOrderPriceWithDeliveryAndBonusInt =
-                  (orderPriceInt + deliveryPriceInt - bonusInt);
+                  ((orderPriceAfterPromoInt + deliveryPriceInt - bonusInt)
+                      .clamp(0, 1 << 31)).toInt();
               String getOrderPriceWithDeliveryAndBonusStr =
                   makePriceSomString(getOrderPriceWithDeliveryAndBonusInt);
 
@@ -848,30 +936,49 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                             SizedBox(
                               height: 20.h,
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("${LocaleData.total.getString(context)}",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      color: cWhite,
-                                      fontWeight: FontWeight.w600,
-                                    )),
-                                Text(
-                                    typeOfOrder == "delivery"
-                                        ? "${Bonus.isBonusExists() ? getOrderPriceWithDeliveryAndBonusStr : getOrderPriceWithDeliveryStr} ${LocaleData.som.getString(context)}"
-                                        : "${Bonus.isBonusExists() ? getOrderPriceWithBonusStr : orderPriceStr} ${LocaleData.som.getString(context)}",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      color: cWhite,
-                                      fontWeight: FontWeight.w600,
-                                    ))
-                              ],
-                            ),
+                            Obx(() {
+                              // Recompute using RX values to refresh on promocode changes
+                              final hasPromo = promocodeStore.hasActivePromocode();
+                              final discountedSubtotal = hasPromo
+                                  ? promocodeStore
+                                      .getTotalPrice(orderPriceInt.toDouble())
+                                      .round()
+                                  : orderPriceInt;
+                              final withBonus =
+                                  ((discountedSubtotal - bonusInt).clamp(0, 1 << 31)).toInt();
+                              final withDelivery = discountedSubtotal + deliveryPriceInt;
+                              final withDeliveryAndBonus =
+                                  ((withDelivery - bonusInt).clamp(0, 1 << 31)).toInt();
+                              final totalStr = typeOfOrder == "delivery"
+                                  ? _fmt(Bonus.isBonusExists()
+                                      ? withDeliveryAndBonus
+                                      : withDelivery)
+                                  : _fmt(Bonus.isBonusExists() ? withBonus : discountedSubtotal);
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("${LocaleData.total.getString(context)}",
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        color: cWhite,
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                  Text(totalStr,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        color: cWhite,
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                ],
+                              );
+                            }),
                             SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: () async {
                                 // //current date
+                                final promocodeData = _buildPromocodeData();
                                 getLatLong();
                                 DateTime now = DateTime.now();
                                 String formattedDateTime =
@@ -927,13 +1034,34 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
 
                                     final int payed_sum = typeOfOrder ==
                                             "delivery"
-                                        ? Bonus.isBonusExists()
-                                            ? getOrderPriceWithDeliveryAndBonusInt *
-                                                100
-                                            : getOrderPriceWithDeliveryInt * 100
-                                        : Bonus.isBonusExists()
-                                            ? getOrderPriceWithBonusInt * 100
-                                            : orderPriceInt * 100;
+                                        ? (Bonus.isBonusExists()
+                                                ? getOrderPriceWithDeliveryAndBonusInt
+                                                : getOrderPriceWithDeliveryInt) *
+                                            100
+                                        : (Bonus.isBonusExists()
+                                                ? getOrderPriceWithBonusInt
+                                                : orderPriceAfterPromoInt) *
+                                            100;
+
+                                    // Build promo-aware comment similar to website
+                                    String commentSpot = "";
+                                    if (promocodeStore.hasActivePromocode()) {
+                                      final promoName = promocodeStore.getPromocodeName();
+                                      if (promoName.isNotEmpty) {
+                                        commentSpot += "\nПромокод:${promoName}";
+                                      }
+                                      final promoSum = promocodeStore.promocodePrice.value;
+                                      if (promoSum > 0) {
+                                        commentSpot += "\nПромокодSum: ${promoSum.toInt()}";
+                                      }
+                                      final promoPercent = promocodeStore.discountPromocode.value > 0
+                                          ? promocodeStore.discountPromocode.value
+                                          : promocodeStore.discountPromocodeProduct.value;
+                                      if (promoPercent > 0) {
+                                        commentSpot += "\nСкидка: ${promoPercent.toInt()}%";
+                                      }
+                                    }
+                                    commentSpot += "\nТип заказа: Через мобильное приложение";
 
                                     Map<String, dynamic> orderMapData = {
                                       'created_at': formattedDateTime,
@@ -949,13 +1077,17 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                           User.getUserInfo('id').toString(),
                                       'phone':
                                           User.getUserInfo('phone').toString(),
-                                      'comment': "no",
+                                      'comment': commentSpot.isEmpty ? "no" : commentSpot,
+                                      // all_price = original total without bonus discount
+                                      // (backend can compute promocode discount from provided promocode data)
                                       'all_price': typeOfOrder == "delivery"
-                                          ? getOrderPriceWithDeliveryInt * 100
+                                          ? (orderPriceInt + deliveryPriceInt) * 100
                                           : orderPriceInt * 100,
                                       'payment':
                                           creditCard ? "creditCard" : "cash",
-                                      'promotion': 'no',
+                                      "promotion": "no",
+                                      // Match web payload: array of promotion entries
+                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : '',
                                       'status': '',
                                       'spot_id': '0',
                                       'payed_bonus': Bonus.isBonusExists()
@@ -970,17 +1102,21 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                     };
 
                                     int priceOfOrder = typeOfOrder == "delivery"
-                                        ? Bonus.isBonusExists()
+                                        ? (Bonus.isBonusExists()
                                             ? getOrderPriceWithDeliveryAndBonusInt
-                                            : getOrderPriceWithDeliveryInt
-                                        : Bonus.isBonusExists()
+                                            : getOrderPriceWithDeliveryInt)
+                                        : (Bonus.isBonusExists()
                                             ? getOrderPriceWithBonusInt
-                                            : orderPriceInt;
+                                            : orderPriceAfterPromoInt);
 
                                     String priceOfOrderString = typeOfOrder ==
                                             "delivery"
-                                        ? "${Bonus.isBonusExists() ? getOrderPriceWithDeliveryAndBonusStr : getOrderPriceWithDeliveryStr} ${LocaleData.som.getString(context)}"
-                                        : "${Bonus.isBonusExists() ? getOrderPriceWithBonusStr : orderPriceStr} ${LocaleData.som.getString(context)}";
+                                        ? _fmt(Bonus.isBonusExists()
+                                            ? getOrderPriceWithDeliveryAndBonusInt
+                                            : getOrderPriceWithDeliveryInt)
+                                        : _fmt(Bonus.isBonusExists()
+                                            ? getOrderPriceWithBonusInt
+                                            : orderPriceAfterPromoInt);
 
                                     Map infoToLastScreen = {
                                       'orderType': typeOfOrder == "delivery"
@@ -988,7 +1124,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                           : typeOfOrder +
                                               " " +
                                               restaurantText[indexOfResturant],
-                                      'discount': false,
+                                      'discount': promocodeStore.hasActivePromocode(),
                                       'itogo': priceOfOrderString,
                                       'bonus': Bonus.isBonusExists()
                                           ? bonusStr +

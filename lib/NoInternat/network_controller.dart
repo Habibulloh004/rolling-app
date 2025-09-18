@@ -12,8 +12,12 @@ class NetworkController extends GetxController {
     _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
-  void _updateConnectionStatus(ConnectivityResult connectivityResult) {
-    if (connectivityResult == ConnectivityResult.none) {
+  // Updated method signature to accept List<ConnectivityResult>
+  void _updateConnectionStatus(List<ConnectivityResult> connectivityResults) {
+    // Check if any of the connectivity results indicate no connection
+    bool hasConnection = connectivityResults.any((result) => result != ConnectivityResult.none);
+    
+    if (!hasConnection) {
       // Get.offAll(() => NoInternetScreen());
       Get.rawSnackbar(
         messageText: Text("Нет соединения с интернетом",

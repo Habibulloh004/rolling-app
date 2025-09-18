@@ -294,6 +294,9 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
     List<Widget> result = [];
     List data = HistoryOrder.getHistoryOrderProducts(info['id']);
     result = List.generate(data.length, (index) {
+      final productData = data[index];
+      final isPromoItem = productData['promocode'] == true;
+
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
         margin: EdgeInsets.only(bottom: 15.h),
@@ -303,26 +306,74 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 90.w,
-              height: 90.h,
-              child: cImage(name: data[index]['photo']),
+            Stack(
+              children: [
+                Container(
+                  width: 90.w,
+                  height: 90.h,
+                  child: cImage(name: productData['photo']),
+                ),
+                if (isPromoItem)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.card_giftcard,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             SizedBox(width: 22.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "${data[index]['price']} ${LocaleData.som.getString(context)}",
-                    style: const TextStyle(
-                      fontSize: 17,
-                      color: cDarkGreen,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        isPromoItem
+                            ? "Бесплатно"
+                            : "${productData['price']} ${LocaleData.som.getString(context)}",
+                        style: TextStyle(
+                          fontSize: 17,
+                          color: isPromoItem ? Colors.green : cDarkGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isPromoItem) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Бонус',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
-                    "${data[index]['name']}",
+                    "${productData['name']}",
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(
@@ -331,13 +382,38 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Text(
-                    "${data[index]['amount']} ${LocaleData.pc.getString(context)}",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: cDarkGreen,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        "${productData['amount']} ${LocaleData.pc.getString(context)}",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: cDarkGreen,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      if (isPromoItem) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Подарок',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

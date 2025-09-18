@@ -1,42 +1,42 @@
 PODS:
   - audioplayers_darwin (0.0.1):
     - Flutter
+    - FlutterMacOS
   - connectivity_plus (0.0.1):
     - Flutter
-    - ReachabilitySwift
   - device_info_plus (0.0.1):
     - Flutter
-  - Firebase/CoreOnly (11.0.0):
-    - FirebaseCore (= 11.0.0)
-  - Firebase/Messaging (11.0.0):
+  - Firebase/CoreOnly (12.0.0):
+    - FirebaseCore (~> 12.0.0)
+  - Firebase/Messaging (12.0.0):
     - Firebase/CoreOnly
-    - FirebaseMessaging (~> 11.0.0)
-  - firebase_core (3.4.0):
-    - Firebase/CoreOnly (= 11.0.0)
+    - FirebaseMessaging (~> 12.0.0)
+  - firebase_core (4.0.0):
+    - Firebase/CoreOnly (= 12.0.0)
     - Flutter
-  - firebase_messaging (15.1.0):
-    - Firebase/Messaging (= 11.0.0)
+  - firebase_messaging (16.0.0):
+    - Firebase/Messaging (= 12.0.0)
     - firebase_core
     - Flutter
-  - FirebaseCore (11.0.0):
-    - FirebaseCoreInternal (~> 11.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/Logger (~> 8.0)
-  - FirebaseCoreInternal (11.4.2):
-    - "GoogleUtilities/NSData+zlib (~> 8.0)"
-  - FirebaseInstallations (11.4.0):
-    - FirebaseCore (~> 11.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/UserDefaults (~> 8.0)
+  - FirebaseCore (12.0.0):
+    - FirebaseCoreInternal (~> 12.0.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreInternal (12.0.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseInstallations (12.0.0):
+    - FirebaseCore (~> 12.0.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
     - PromisesObjC (~> 2.4)
-  - FirebaseMessaging (11.0.0):
-    - FirebaseCore (~> 11.0)
-    - FirebaseInstallations (~> 11.0)
-    - GoogleDataTransport (~> 10.0)
-    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/Reachability (~> 8.0)
-    - GoogleUtilities/UserDefaults (~> 8.0)
+  - FirebaseMessaging (12.0.0):
+    - FirebaseCore (~> 12.0.0)
+    - FirebaseInstallations (~> 12.0.0)
+    - GoogleDataTransport (~> 10.1)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Reachability (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
     - nanopb (~> 3.30910.0)
   - Flutter (1.0.0)
   - flutter_credit_card (0.0.1):
@@ -47,31 +47,32 @@ PODS:
     - Flutter
   - geolocator_apple (1.2.0):
     - Flutter
+    - FlutterMacOS
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
-  - GoogleUtilities/AppDelegateSwizzler (8.0.2):
+  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
     - GoogleUtilities/Environment
     - GoogleUtilities/Logger
     - GoogleUtilities/Network
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Environment (8.0.2):
+  - GoogleUtilities/Environment (8.1.0):
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Logger (8.0.2):
+  - GoogleUtilities/Logger (8.1.0):
     - GoogleUtilities/Environment
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Network (8.0.2):
+  - GoogleUtilities/Network (8.1.0):
     - GoogleUtilities/Logger
     - "GoogleUtilities/NSData+zlib"
     - GoogleUtilities/Privacy
     - GoogleUtilities/Reachability
-  - "GoogleUtilities/NSData+zlib (8.0.2)":
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Privacy (8.0.2)
-  - GoogleUtilities/Reachability (8.0.2):
+  - GoogleUtilities/Privacy (8.1.0)
+  - GoogleUtilities/Reachability (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - GoogleUtilities/UserDefaults (8.0.2):
+  - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - nanopb (3.30910.0):
@@ -85,21 +86,23 @@ PODS:
     - Flutter
     - FlutterMacOS
   - PromisesObjC (2.4.0)
-  - ReachabilitySwift (5.0.0)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
   - url_launcher_ios (0.0.1):
     - Flutter
   - yandex_mapkit (0.0.1):
     - Flutter
-    - YandexMapsMobile (= 4.4.0-full)
-  - YandexMapsMobile (4.4.0-full)
+    - YandexMapsMobile (= 4.2.2-full)
+  - YandexMapsMobile (4.2.2-full)
 
 DEPENDENCIES:
-  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/ios`)
+  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
@@ -108,11 +111,12 @@ DEPENDENCIES:
   - flutter_credit_card (from `.symlinks/plugins/flutter_credit_card/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_localization (from `.symlinks/plugins/flutter_localization/ios`)
-  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
+  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - yandex_mapkit (from `.symlinks/plugins/yandex_mapkit/ios`)
 
@@ -127,12 +131,11 @@ SPEC REPOS:
     - GoogleUtilities
     - nanopb
     - PromisesObjC
-    - ReachabilitySwift
     - YandexMapsMobile
 
 EXTERNAL SOURCES:
   audioplayers_darwin:
-    :path: ".symlinks/plugins/audioplayers_darwin/ios"
+    :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
@@ -150,7 +153,7 @@ EXTERNAL SOURCES:
   flutter_localization:
     :path: ".symlinks/plugins/flutter_localization/ios"
   geolocator_apple:
-    :path: ".symlinks/plugins/geolocator_apple/ios"
+    :path: ".symlinks/plugins/geolocator_apple/darwin"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -159,40 +162,42 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
   yandex_mapkit:
     :path: ".symlinks/plugins/yandex_mapkit/ios"
 
 SPEC CHECKSUMS:
-  audioplayers_darwin: 877d9a4d06331c5c374595e46e16453ac7eafa40
-  connectivity_plus: 413a8857dd5d9f1c399a39130850d02fe0feaf7e
-  device_info_plus: c6fb39579d0f423935b0c9ce7ee2f44b71b9fce6
-  Firebase: 9f574c08c2396885b5e7e100ed4293d956218af9
-  firebase_core: ceec591a66629daaee82d3321551692c4a871493
-  firebase_messaging: 15d8b557010f3bb7b98d0302e1c7c8fbcd244425
-  FirebaseCore: 3cf438f431f18c12cdf2aaf64434648b63f7e383
-  FirebaseCoreInternal: 35731192cab10797b88411be84940d2beb33a238
-  FirebaseInstallations: 6ef4a1c7eb2a61ee1f74727d7f6ce2e72acf1414
-  FirebaseMessaging: d2d1d9c62c46dd2db49a952f7deb5b16ad2c9742
+  audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
+  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
+  Firebase: 800d487043c0557d9faed71477a38d9aafb08a41
+  firebase_core: 633e1851ffe1b9ab875f6467a4f574c79cef02e4
+  firebase_messaging: d17feef781edc84ebefe62624fb384358ad96361
+  FirebaseCore: 055f4ab117d5964158c833f3d5e7ec6d91648d4a
+  FirebaseCoreInternal: dedc28e569a4be85f38f3d6af1070a2e12018d55
+  FirebaseInstallations: d4c7c958f99c8860d7fcece786314ae790e2f988
+  FirebaseMessaging: af49f8d7c0a3d2a017d9302c80946f45a7777dde
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_credit_card: 48fb35065294868bc6a3e7f18a42f28929b84f48
-  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
-  flutter_localization: f43b18844a2b3d2c71fd64f04ffd6b1e64dd54d4
-  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
+  flutter_credit_card: 75489579678755891ccb1ddcc13415defcea4f01
+  flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
+  flutter_localization: 72299fb6cb4e51cae587bd953ed0b958040b71e6
+  geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
-  GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  package_info_plus: 115f4ad11e0698c8c1c5d8a689390df880f47e85
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
-  share_plus: 8875f4f2500512ea181eef553c3e27dba5135aad
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  yandex_mapkit: 5ab063b9cb8ef57b40bb02bf3dec3ec324ef50c9
-  YandexMapsMobile: a76ddceccf2d78f9f1034d07a354810cd21ef21a
+  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
+  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
+  yandex_mapkit: bd54223f47feaad47f20ed8a355704e4992bf768
+  YandexMapsMobile: 1fd5f86bc368ad6ba528b199f9477e4a26796567
 
-PODFILE CHECKSUM: a57f30d18f102dd3ce366b1d62a55ecbef2158e5
+PODFILE CHECKSUM: 9b6bf9c2a04c57a4ce038b1f9592ef7ed7f596f1
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

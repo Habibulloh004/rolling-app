@@ -39,6 +39,11 @@ class User {
     return box.containsKey(id);
   }
 
+  // Added for promocode compatibility
+  static bool isKeyAvailable(String id) {
+    return box.containsKey(id);
+  }
+
   static clear() {
     box.clear();
   }

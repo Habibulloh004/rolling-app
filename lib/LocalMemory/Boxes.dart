@@ -23,6 +23,9 @@ void initBoxes() async {
   var boxUpdate = await Hive.openBox("update");
   var boxMemorycooldown = await Hive.openBox("memorycooldown");
   var boxMailingList = await Hive.openBox("maillinglist");
+
+  // Add the promocode state box
+  var boxPromocodeState = await Hive.openBox("promocode_state");
 }
 
 void clearBoxes() {
@@ -36,4 +39,11 @@ void clearBoxes() {
   Language.clear();
   Memorycooldown.clean();
   Maillinglist.clear();
+
+  // Clear promocode state as well
+  try {
+    Hive.box("promocode_state").clear();
+  } catch (e) {
+    print('Error clearing promocode state: $e');
+  }
 }

@@ -12,6 +12,190 @@ import '../Models/Product.dart';
 
 class Api {
   static final dio = Dio();
+  static const String posterUrl = 'https://rolling-sushi.joinposter.com';
+  static const String posterToken = '046902:6281755091471320780488d484cc4b78';
+  static const String baseUrl = 'https://vm4983125.25ssd.had.wf:5000';
+
+  static Future<Map<String, dynamic>> getPosterData(
+      String endpoint,
+      String props, [
+        int revalidateTime = 0,
+      ]) async {
+    try {
+      final response = await dio.get(
+        '$posterUrl/api/$endpoint?token=$posterToken${props.isNotEmpty ? props : ""}',
+      );
+      return response.data;
+    } catch (e) {
+      print('Error fetching poster data: $e');
+      throw e;
+    }
+  }
+
+  // Add these methods to your existing Api.dart class
+
+// Updated getPromotions method to return the correct format
+  static Future<List<dynamic>> getPromotions() async {
+    try {
+      final response = await getPosterData('clients.getPromotions', '', 600);
+      if (response['response'] != null) {
+        return response['response'];
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching promotions: $e');
+      return [];
+    }
+  }
+
+// Helper method to get client info for promocode validation
+  static Future<Map<String, dynamic>> getClientInfo(String clientId) async {
+    try {
+      final response = await dio.get(
+          '$baseUrl/get_client_by_id/$clientId');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+      return {};
+    } catch (e) {
+      print('Error fetching client info: $e');
+      return {};
+    }
+  }
+
+// Method to validate birthday for birthday promocodes
+  static Future<bool> validateBirthdayPromocode(String clientId) async {
+    try {
+      final clientInfo = await getClientInfo(clientId);
+      if (clientInfo['birthday'] == null) return false;
+
+      final birthday = DateTime.tryParse(clientInfo['birthday']);
+      if (birthday == null) return false;
+
+      final today = DateTime.now();
+      return today.month == birthday.month && today.day == birthday.day;
+    } catch (e) {
+      print('Error validating birthday: $e');
+      return false;
+    }
+  }
+
+// Method to check if it's user's first order
+  static Future<bool> isFirstOrder(String clientId) async {
+    try {
+      final clientInfo = await getClientInfo(clientId);
+      if (clientInfo['comment'] == null) return true;
+
+      Map<String, dynamic> commentData;
+      if (clientInfo['comment'] is String) {
+        commentData = jsonDecode(clientInfo['comment']);
+      } else {
+        commentData = clientInfo['comment'];
+      }
+
+      final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
+      return orderLength == 0;
+    } catch (e) {
+      print('Error checking first order: $e');
+      return true; // Default to true if we can't determine
+    }
+  }
+
+// Method to format promotion data to match JSX structure
+  static Map<String, dynamic> formatPromotionData(Map<String, dynamic> promotion) {
+    try {
+      // Ensure params is properly parsed
+      if (promotion['params'] is String) {
+        promotion['params'] = parsePromocodeParams(promotion['params']);
+      }
+
+      return promotion;
+    } catch (e) {
+      print('Error formatting promotion data: $e');
+      return promotion;
+    }
+  }
+
+// Parse promocode params string to Map
+  static Map<String, dynamic> parsePromocodeParams(String params) {
+    try {
+      return jsonDecode(params);
+    } catch (e) {
+      try {
+        // Try parsing as URL query parameters
+        final uri = Uri.tryParse('?$params');
+        if (uri != null) {
+          return Map<String, dynamic>.from(uri.queryParameters);
+        }
+      } catch (e2) {
+        print('Error parsing promocode params: $e2');
+      }
+      return {};
+    }
+  }
+
+// Method to get time data for restaurant hours validation
+  static Future<Map<String, dynamic>> getTimeData() async {
+    try {
+      final response = await dio.get('$baseUrl/get_time');
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+      return {
+        'closed_time': '23:00',
+        'opened_time': '10:00',
+      };
+    } catch (e) {
+      print('Error fetching time data: $e');
+      return {
+        'closed_time': '23:00',
+        'opened_time': '10:00',
+      };
+    }
+  }
+
+  static Future<List<dynamic>> getAllProducts() async {
+    try {
+      final response = await getPosterData('menu.getProducts', '', 7200);
+      return response['response'] ?? [];
+    } catch (e) {
+      print('Error fetching all products: $e');
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> getAllCategories() async {
+    try {
+      final response = await getPosterData('menu.getCategories', '', 7200);
+      return response['response'] ?? [];
+    } catch (e) {
+      print('Error fetching all categories: $e');
+      return [];
+    }
+  }
+
+  static String _formatPrice(String numberStr) {
+    try {
+      if (numberStr == "0" || numberStr.length == 1) {
+        return "0";
+      }
+
+      // Remove last two digits (kopecks)
+      String numberStrTrimmed = numberStr.length > 2
+          ? numberStr.substring(0, numberStr.length - 2)
+          : "0";
+
+      // Format with space for thousands
+      if (numberStrTrimmed.length > 3) {
+        return "${numberStrTrimmed.substring(0, numberStrTrimmed.length - 3)} ${numberStrTrimmed.substring(numberStrTrimmed.length - 3)}";
+      }
+
+      return numberStrTrimmed;
+    } catch (e) {
+      return "0";
+    }
+  }
 
   static Future<List<Categories>> getCategories() async {
     //create list
@@ -28,7 +212,7 @@ class Api {
               name: data[i]["category_name"],
               categoryId: data[i]["category_id"].toString(),
               photo:
-                  "https://rolling-sushi.joinposter.com${data[i]["category_photo"].toString()}",
+              "https://rolling-sushi.joinposter.com${data[i]["category_photo"].toString()}",
             ));
           } else {
             continue;
@@ -94,7 +278,7 @@ class Api {
                 numberStr.length == 6 ||
                 numberStr.length == 5) {
               String numberStrTrimmed =
-                  numberStr.substring(0, numberStr.length - 2);
+              numberStr.substring(0, numberStr.length - 2);
               priceResult =
                   numberStrTrimmed.substring(0, numberStrTrimmed.length - 3) +
                       " " +
@@ -105,7 +289,7 @@ class Api {
 
             products.add(Product(
                 photo:
-                    "https://rolling-sushi.joinposter.com${data[i]["photo_origin"]}",
+                "https://rolling-sushi.joinposter.com${data[i]["photo_origin"]}",
                 name: data[i]["product_name"],
                 description: descriptionClear,
                 ingredients: ingredientsString,
@@ -137,12 +321,12 @@ class Api {
       var data = {
         'phone': modifiedPhoneNumber,
         'message':
-            "Rolling Sushi: Ilovamizda ro'yxatdan o'tkaningiz uchun minnatdorchilik bildiramiz. Tasdiqlash uchun kod: ${code}",
+        "Rolling Sushi: Ilovamizda ro'yxatdan o'tkaningiz uchun minnatdorchilik bildiramiz. Tasdiqlash uchun kod: ${code}",
       };
 
       print(data);
       Response response = await dio
-          .post('https://vm4983125.25ssd.had.wf:5000/send_sms', data: data);
+          .post('https://rollingadmin.uz:5000/send_sms', data: data);
       print(response.data);
     } catch (e) {
       print(e);
@@ -187,27 +371,36 @@ class Api {
     String modifiedPhoneNumber = phone.replaceAll("+", "");
     try {
       final response = await dio.get(
-          'https://vm4983125.25ssd.had.wf:5000/get_client/${modifiedPhoneNumber}');
+          'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
       print("--------------");
       print(response.data['comment']);
-      Map data = jsonDecode(response.data['comment']);
-      String passwodDb = data['password'].replaceAll(RegExp(r'\D'), '');
+
+      // Handle both string and object comment formats
+      Map data;
+      if (response.data['comment'] is String) {
+        data = jsonDecode(response.data['comment']);
+      } else {
+        data = response.data['comment'] ?? {};
+      }
+
+      String passwodDb = data['password']?.toString()?.replaceAll(RegExp(r'\D'), '') ?? '';
 
       print(password);
       if (response.data != " ") {
         // works
         if (passwodDb == password) {
-          Map data = {
+          Map resultData = {
             'res': true,
             'name': response.data['lastname'],
             'phone': phone,
             'id': response.data['client_id'],
             'password': passwodDb,
             'client_sex': response.data['client_sex'],
-            'birthday': response.data['birthday']
+            'birthday': response.data['birthday'],
+            'comment': response.data['comment'], // Include comment for length checking
           };
 
-          return data;
+          return resultData;
         } else {
           return {
             'res': false,
@@ -227,7 +420,7 @@ class Api {
     String modifiedPhoneNumber = phone.replaceAll("+", "");
     try {
       final response = await dio.get(
-          'https://vm4983125.25ssd.had.wf:5000/get_client/${modifiedPhoneNumber}');
+          'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
       String passwodDb = response.data['comment'].replaceAll(RegExp(r'\D'), '');
 
       print("DENDENDEN");
@@ -306,7 +499,7 @@ class Api {
 
     try {
       Response response = await dio
-          .post('https://vm4983125.25ssd.had.wf:5000/add_order', data: data);
+          .post('https://rollingadmin.uz:5000/add_order', data: data);
       print(response.data);
       print(response.data['order_id'].toString());
       return response.data['order_id'].toString();
@@ -336,7 +529,7 @@ class Api {
     try {
       print(User.getUserInfo('id'));
       final response = await dio.get(
-          'https://vm4983125.25ssd.had.wf:5000/get_bonus/${User.getUserInfo('id').toString()}');
+          'https://rollingadmin.uz:5000/get_bonus/${User.getUserInfo('id').toString()}');
       result = response.data['bonus_value'];
       print("-----------");
       print(result);
@@ -374,7 +567,7 @@ class Api {
     List<Product> products = [];
     try {
       final response = await dio
-          .get('https://vm4983125.25ssd.had.wf:5000/get_product?name=${name}');
+          .get('https://rollingadmin.uz:5000/get_product?name=${name}');
       // print(response);
       final data = response.data;
       print(data);
@@ -433,7 +626,7 @@ class Api {
   static Future<String> getOrderState(String id) async {
     try {
       final response =
-          await dio.get('https://vm4983125.25ssd.had.wf:5000/get_order/${id}');
+      await dio.get('https://rollingadmin.uz:5000/get_order/${id}');
 
       // return "cooking";
       return response.data['status'];
@@ -448,8 +641,15 @@ class Api {
       String phone = User.getUserInfo("phone");
       String modifiedPhoneNumber = phone.replaceAll("+", "");
       final response = await dio.get(
-          'https://vm4983125.25ssd.had.wf:5000/get_client/${modifiedPhoneNumber}');
-      Map data = jsonDecode(response.data['comment']);
+          'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
+
+      // Handle both string and object comment formats
+      Map data;
+      if (response.data['comment'] is String) {
+        data = jsonDecode(response.data['comment']);
+      } else {
+        data = response.data['comment'] ?? {};
+      }
 
       if (data['length'] == '0') {
         return true;
@@ -467,10 +667,17 @@ class Api {
       String phone = User.getUserInfo("phone");
       String modifiedPhoneNumber = phone.replaceAll("+", "");
       final response = await dio.get(
-          'https://vm4983125.25ssd.had.wf:5000/get_client/${modifiedPhoneNumber}');
-      Map data = jsonDecode(response.data['comment']);
+          'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
 
-      return data['length'];
+      // Handle both string and object comment formats
+      Map data;
+      if (response.data['comment'] is String) {
+        data = jsonDecode(response.data['comment']);
+      } else {
+        data = response.data['comment'] ?? {};
+      }
+
+      return data['length'] ?? '0';
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -504,11 +711,11 @@ class Api {
   static Future<Map<String, String>> payCreditCard(int amount) async {
     try {
       String formattedDate =
-          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       String uniqString =
           formattedDate + " " + User.getUserInfo('phone').toString();
       String cardNumberWithoutSpaces =
-          await CreditCard.getCreditCardNumber().replaceAll(' ', '');
+      await CreditCard.getCreditCardNumber().replaceAll(' ', '');
       String creditCardDate = transformDate(CreditCard.getCreditCardDate());
 
       Map data = {
@@ -521,7 +728,7 @@ class Api {
       print(data);
 
       Response response = await dio.post(
-        'https://vm4983125.25ssd.had.wf:5000/pay',
+        'https://rollingadmin.uz:5000/pay',
         data: data,
       );
 
@@ -554,7 +761,7 @@ class Api {
       };
 
       Response response = await dio.post(
-        'https://vm4983125.25ssd.had.wf:5000/pay_confirm',
+        'https://rollingadmin.uz:5000/pay_confirm',
         data: data,
       );
 
@@ -580,7 +787,7 @@ class Api {
     bool allowed = false;
     try {
       final response =
-          await dio.get("https://sushiserver.onrender.com/get_time");
+      await dio.get("https://sushiserver.onrender.com/get_time");
 
       List<String> closeParts = response.data['closed_time'].split(':');
       int closingHour = int.parse(closeParts[0]);
@@ -605,7 +812,7 @@ class Api {
   static Future<int> getDeliveryPrice() async {
     try {
       final response =
-          await dio.get('https://vm4983125.25ssd.had.wf:5000/delivery_price');
+      await dio.get('https://rollingadmin.uz:5000/delivery_price');
 
       if (response.statusCode == 200 &&
           response.data != null &&
@@ -630,7 +837,7 @@ class Api {
   static Future<List> getMailingList() async {
     try {
       final response =
-          await dio.get("https://sushiserver.onrender.com/getNews");
+      await dio.get("https://sushiserver.onrender.com/getNews");
 
       print(response.data);
 
@@ -644,7 +851,7 @@ class Api {
   static sendFeedback(String orderId, String data) async {
     try {
       final response = await dio.put(
-          "https://vm4983125.25ssd.had.wf:5000/update_order_feedback/${orderId}",
+          "https://rollingadmin.uz:5000/update_order_feedback/${orderId}",
           data: data);
 
       print(response.data);
