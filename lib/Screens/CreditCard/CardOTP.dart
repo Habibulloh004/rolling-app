@@ -273,16 +273,15 @@ class _CardOTPState extends State<CardOTP> {
 
                                                                 Map data = {
                                                                   'id': orderId,
-                                                                  'date':
-                                                                      infoForNextScreen[
-                                                                          'time'],
-                                                                  'priceOfOrderString':
-                                                                      infoForNextScreen[
-                                                                          'itogo'],
-                                                                  'products': Order
-                                                                      .getFullOrder(),
-                                                                  'payment_method':
-                                                                      'card',
+                                                                  'date': infoForNextScreen['time'],
+                                                                  'priceOfOrderString': infoForNextScreen['itogo'],
+                                                                  'products': Order.getFullOrder(),
+                                                                  'payment_method': 'card',
+                                                                  // Add promocode information from arguments if passed
+                                                                  'hasPromocode': infoForNextScreen['hasPromocode'] ?? false,
+                                                                  'promocodeDiscount': infoForNextScreen['promocodeDiscount'] ?? 0,
+                                                                  'promocodeAmount': infoForNextScreen['promocodeAmount'],
+                                                                  'promocodeName': infoForNextScreen['promocodeName'],
                                                                 };
 
                                                                 //Add order to history Localy

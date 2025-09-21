@@ -871,7 +871,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                               ],
                             ),
                             SizedBox(
-                              height: 20.h,
+                              height: 15.h,
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -895,7 +895,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                               ],
                             ),
                             SizedBox(
-                              height: 20.h,
+                              height: 15.h,
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -920,43 +920,94 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                               ],
                             ),
                             SizedBox(
-                              height: 20.h,
+                              height: 15.h,
                             ),
                             Obx(() {
                               // Recompute using RX values to refresh on promocode changes
                               final hasPromo = promocodeStore.hasActivePromocode();
                               final discountedSubtotal = hasPromo
-                                  ? promocodeStore
-                                      .getTotalPrice(orderPriceInt.toDouble())
-                                      .round()
+                                  ? promocodeStore.getTotalPrice(orderPriceInt.toDouble()).round()
                                   : orderPriceInt;
-                              final withBonus =
-                                  ((discountedSubtotal - bonusInt).clamp(0, 1 << 31)).toInt();
-                              final withDelivery = discountedSubtotal + deliveryPriceInt;
-                              final withDeliveryAndBonus =
-                                  ((withDelivery - bonusInt).clamp(0, 1 << 31)).toInt();
-                              final totalStr = typeOfOrder == "delivery"
-                                  ? _fmt(Bonus.isBonusExists()
-                                      ? withDeliveryAndBonus
-                                      : withDelivery)
-                                  : _fmt(Bonus.isBonusExists() ? withBonus : discountedSubtotal);
+                              final promocodeDiscount = promocodeStore.getTotalDiscount();
+                              final promocodePrice = promocodeStore.promocodePrice.value;
 
-                              return Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              return Column(
                                 children: [
-                                  Text("${LocaleData.total.getString(context)}",
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        color: cWhite,
-                                        fontWeight: FontWeight.w600,
-                                      )),
-                                  Text(totalStr,
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        color: cWhite,
-                                        fontWeight: FontWeight.w600,
-                                      )),
+                                  // Show promocode discount if active
+                                  if (hasPromo) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text("${LocaleData.promocode.getString(context)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: cWhite,
+                                              fontWeight: FontWeight.w400,
+                                            )),
+                                        Text(
+                                            promocodePrice > 0
+                                                ? "-${makePriceSomString(promocodePrice.toInt())} ${LocaleData.som.getString(context)}"
+                                                : "-${promocodeDiscount.toStringAsFixed(0)}% ${LocaleData.discount.getString(context)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green.shade200,
+                                              fontWeight: FontWeight.w400,
+                                            ))
+                                      ],
+                                    ),
+                                  ],
+
+                                  SizedBox(height: 15.h),
+
+                                  // Total with proper calculation
+                                  // Replace the existing total Row in your Obx widget with this:
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text("${LocaleData.total.getString(context)}",
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            color: cWhite,
+                                            fontWeight: FontWeight.w600,
+                                          )),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          // Show original price with strikethrough if there's a discount
+                                          if (hasPromo || Bonus.isBonusExists()) ...[
+                                            Text(
+                                              typeOfOrder == "delivery"
+                                                  ? "${makePriceSomString(orderPriceInt + deliveryPriceInt)} ${LocaleData.som.getString(context)}"
+                                                  : "${orderPriceStr} ${LocaleData.som.getString(context)}",
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 12,
+                                                decoration: TextDecoration.lineThrough,
+                                                decorationColor: Colors.grey,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4.h),
+                                          ],
+                                          // Show the actual final total amount
+                                          Text(
+                                            typeOfOrder == "delivery"
+                                                ? (Bonus.isBonusExists()
+                                                    ? "${makePriceSomString(getOrderPriceWithDeliveryAndBonusInt)} ${LocaleData.som.getString(context)}"
+                                                    : "${makePriceSomString(getOrderPriceWithDeliveryInt)} ${LocaleData.som.getString(context)}")
+                                                : (Bonus.isBonusExists()
+                                                    ? "${makePriceSomString(getOrderPriceWithBonusInt)} ${LocaleData.som.getString(context)}"
+                                                    : "${makePriceSomString(orderPriceAfterPromoInt)} ${LocaleData.som.getString(context)}"),
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              color: cWhite,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               );
                             }),
@@ -1190,20 +1241,20 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                         Map data = {
                                           'id': orderId,
                                           'date': formattedDateTime,
-                                          'priceOfOrderString':
-                                              priceOfOrderString,
+                                          'priceOfOrderString': priceOfOrderString,
                                           'products': Order.getFullOrder(),
                                           'payment_method': 'cash',
                                           'type': typeOfOrder == "delivery"
                                               ? typeOfOrder
-                                              : typeOfOrder +
-                                                  " " +
-                                                  restaurantText[
-                                                      indexOfResturant],
+                                              : typeOfOrder + " " + restaurantText[indexOfResturant],
+                                          // Add promocode information
                                           'hasPromocode': promocodeStore.hasActivePromocode(),
                                           'promocodeDiscount': promocodeStore.getTotalDiscount(),
                                           'promocodeAmount': promocodeStore.promocodePrice.value > 0 
                                               ? makePriceSomString(promocodeStore.promocodePrice.value.toInt())
+                                              : null,
+                                          'promocodeName': promocodeStore.hasActivePromocode() 
+                                              ? promocodeStore.getPromocodeName() 
                                               : null,
                                         };
 

@@ -68,6 +68,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                   SizedBox(height: 8.h),
+                  
+                  // Show promocode info if available
+                  if (info[index]['hasPromocode'] == true) ...[
+                    Text(
+                      "${LocaleData.promocode.getString(context)}: ${info[index]['promocodeDiscount'] != null && info[index]['promocodeDiscount'] > 0 ? '${info[index]['promocodeDiscount']}% ${LocaleData.discount.getString(context)}' : info[index]['promocodeAmount'] != null ? '${info[index]['promocodeAmount']} ${LocaleData.bonus.getString(context)}' : LocaleData.bonus.getString(context)}",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.green.shade200,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                  ],
+                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -89,7 +103,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             'sum': info[index]['priceOfOrderString'],
                             'orderId': info[index]['id'],
                             'payment_method': info[index]['payment_method'],
-                            'type': info[index]['type']
+                            'type': info[index]['type'],
+                            // Pass promocode information
+                            'hasPromocode': info[index]['hasPromocode'] ?? false,
+                            'promocodeDiscount': info[index]['promocodeDiscount'] ?? 0,
+                            'promocodeAmount': info[index]['promocodeAmount'],
+                            'promocodeName': info[index]['promocodeName'],
                           });
                         },
                         child: Container(

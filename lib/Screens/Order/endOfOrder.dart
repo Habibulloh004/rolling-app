@@ -69,6 +69,7 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
                       height: 28.h,
@@ -87,6 +88,8 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                     SizedBox(
                       height: 24.h,
                     ),
+                    
+                    // Products row with original price
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -121,16 +124,17 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                                 fontWeight: FontWeight.w400,
                               )),
                           Text(
-                              info['promocodeDiscount'] != null && info['promocodeDiscount'] > 0
-                                  ? "${info['promocodeDiscount']}% ${LocaleData.discount.getString(context)}"
-                                  : info['promocodeAmount'] != null
-                                      ? "-${info['promocodeAmount']} ${LocaleData.som.getString(context)}"
-                                      : "${LocaleData.discount.getString(context)}",
-                              style: TextStyle(
-                                fontSize: 17,
-                                color: Colors.green.shade200,
-                                fontWeight: FontWeight.w400,
-                              ))
+                            info['promocodeDiscount'] != null && info['promocodeDiscount'] > 0
+                              ? "-${info['promocodeDiscount'].toInt()}% ${LocaleData.discount.getString(context)}"
+                              : info['promocodeAmount'] != null
+                              ? "-${info['promocodeAmount']} ${LocaleData.som.getString(context)}"
+                              : "${LocaleData.discount.getString(context)}",
+                            style: TextStyle(
+                              fontSize: 17,
+                              color: Colors.green.shade200,
+                              fontWeight: FontWeight.w400,
+                            )
+                          )
                         ],
                       ),
                       SizedBox(
@@ -138,6 +142,7 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                       ),
                     ],
 
+                    // Delivery row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -161,19 +166,19 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                     SizedBox(
                       height: 20.h,
                     ),
+                    
+                    // Bonus row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                            info['discount'] || info['hasPromocode'] == true
-                                ? "${LocaleData.bonuslowercase.getString(context)}"
-                                : "${LocaleData.bonuslowercase.getString(context)}",
+                        Text("${LocaleData.bonuslowercase.getString(context)}",
                             style: TextStyle(
                               fontSize: 17,
                               color: cWhite,
                               fontWeight: FontWeight.w600,
                             )),
-                        Text(info['bonus'],
+                        Text(
+                            info['bonus'].toString().startsWith('-') ? info['bonus'] : "-${info['bonus']}",
                             style: TextStyle(
                               fontSize: 17,
                               color: cWhite,
@@ -184,6 +189,8 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                     SizedBox(
                       height: 20.h,
                     ),
+                    
+                    // Total row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -204,6 +211,8 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                     SizedBox(
                       height: 38.h,
                     ),
+                    
+                    // Order type section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [

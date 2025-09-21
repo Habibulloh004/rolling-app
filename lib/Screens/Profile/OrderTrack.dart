@@ -226,8 +226,7 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                 SizedBox(height: 30.h),
                 Container(
                   width: double.infinity,
-                  padding:
-                      EdgeInsets.symmetric(vertical: 24.h, horizontal: 24.w),
+                  padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 24.w),
                   decoration: BoxDecoration(
                     color: cDarkGreen,
                     borderRadius: BorderRadius.circular(10),
@@ -267,6 +266,23 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
+                      
+                      // Show promocode info if available
+                      if (info['hasPromocode'] == true) ...[
+                        Text(
+                          "${LocaleData.promocode.getString(context)}: ${info['promocodeDiscount'] != null && info['promocodeDiscount'] > 0 
+                            ? '${info['promocodeDiscount'].toInt()}% ${LocaleData.discount.getString(context)}' 
+                            : info['promocodeAmount'] != null 
+                            ? '${info['promocodeAmount']} ${LocaleData.som.getString(context)} ${LocaleData.bonus.getString(context)}' 
+                            : LocaleData.bonus.getString(context)}",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                      
                       SizedBox(height: 18.h),
                       Text(
                         "${LocaleData.total.getString(context)}: ${info['sum']}",
