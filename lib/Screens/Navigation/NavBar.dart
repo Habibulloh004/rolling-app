@@ -25,7 +25,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String name = text.replaceAll(' ', '\n');
+    String name = text;
     Size size = MediaQuery.of(context).size;
     return Drawer(
       // Other properties...
@@ -68,8 +68,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Container(
-                                width: 180.w,
+                              Expanded(
                                 child: Text(
                                   name,
                                   style: TextStyle(
@@ -78,6 +77,8 @@ class _NavBarScreenState extends State<NavBarScreen> {
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w700,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Container(

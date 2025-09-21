@@ -356,25 +356,29 @@ class PromocodeStore extends GetxController {
         setPromocodePrice(discountValue);
         break;
 
-      case 3: // Percentage discount - matching JSX logic
-        final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
+      case 3: // Percentage discount - FIXED birthday logic
+        final promocodeName = promocode.name?.split('\$').last?.toLowerCase()?.trim() ?? '';
+        print('Checking promocode: $promocodeName');
 
-        // Birthday check - matching JSX logic
+        // Birthday check - match JSX logic exactly
         if (promocodeName == 'bday20') {
           final isValidBirthday = await _checkBirthday();
           if (!isValidBirthday) {
+            // Match JSX error message pattern
             onError(_getLocalizedText('promocodeValidOnlyOnBirthday'));
             return false;
           }
+          print('Birthday promocode validated successfully');
         }
 
-        // First order check - matching JSX logic  
+        // First order check - match JSX logic
         if (promocodeName == 'first20') {
           final isFirstOrder = await _checkFirstOrder();
           if (!isFirstOrder) {
             onError(_getLocalizedText('promocodeValidOnlyForFirstOrder'));
             return false;
           }
+          print('First order promocode validated successfully');
         }
 
         final discountValue = promocode.params?.discountValue?.toDouble() ?? 0;
@@ -397,6 +401,8 @@ class PromocodeStore extends GetxController {
           // For general conditions (type 0) or no specific conditions
           setDiscountPromocode(discountValue);
         }
+        
+        print('Applied discount: $discountValue% (specific: $hasSpecificCondition)');
         break;
     }
     return true;
@@ -404,28 +410,101 @@ class PromocodeStore extends GetxController {
 
   Future<bool> _checkBirthday() async {
     try {
-      // Get fresh data from server to ensure accuracy
-      if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
-        return false; // No user data, can't validate birthday
+      // First check if user is logged in - similar to JSX auth check
+      if (!User.isKeyAvalible('id')) {
+        print('No user logged in for birthday check');
+        return false;
       }
 
-      final clientInfo = await Api.getClient(
-        User.getUserInfo('phone'),
-        User.getUserInfo('password'),
-      );
+      // Get birthday from local user data first (like JSX gets from auth?.birthday)
+      String? birthdayStr;
+      
+      // Try to get birthday from local storage first
+      if (User.isKeyAvalible('birthday')) {
+        birthdayStr = User.getUserInfo('birthday');
+      }
+      
+      // If no local birthday data, get from server
+      if (birthdayStr == null || birthdayStr.isEmpty) {
+        if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
+          print('No phone/password for API call');
+          return false;
+        }
 
-      if (clientInfo['res'] != true) return false;
+        final clientInfo = await Api.getClient(
+          User.getUserInfo('phone'),
+          User.getUserInfo('password'),
+        );
 
-      final birthdayStr = clientInfo['birthday'];
-      if (birthdayStr == null || birthdayStr.isEmpty) return false;
+        if (clientInfo['res'] != true) {
+          print('Failed to get client info from API');
+          return false;
+        }
 
-      final birthday = DateTime.tryParse(birthdayStr);
-      if (birthday == null) return false;
+        birthdayStr = clientInfo['birthday'];
+      }
+
+      if (birthdayStr == null || birthdayStr.isEmpty) {
+        print('No birthday data available');
+        return false;
+      }
+
+      // Parse birthday - handle multiple date formats like JSX does
+      DateTime? birthday;
+      
+      // Try different parsing approaches
+      try {
+        // First try direct parsing
+        birthday = DateTime.tryParse(birthdayStr);
+        
+        // If that fails, try parsing as MM/DD/YYYY or DD/MM/YYYY format
+        if (birthday == null && birthdayStr.contains('/')) {
+          final parts = birthdayStr.split('/');
+          if (parts.length >= 3) {
+            // Try MM/DD/YYYY format first
+            try {
+              final month = int.parse(parts[0]);
+              final day = int.parse(parts[1]);
+              final year = int.parse(parts[2]);
+              birthday = DateTime(year, month, day);
+            } catch (e) {
+              // Try DD/MM/YYYY format
+              try {
+                final day = int.parse(parts[0]);
+                final month = int.parse(parts[1]);
+                final year = int.parse(parts[2]);
+                birthday = DateTime(year, month, day);
+              } catch (e) {
+                print('Failed to parse date format: $birthdayStr');
+              }
+            }
+          }
+        }
+        
+        // Try parsing as timestamp if it's a number
+        if (birthday == null) {
+          final timestamp = int.tryParse(birthdayStr);
+          if (timestamp != null) {
+            birthday = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          }
+        }
+      } catch (e) {
+        print('Error parsing birthday: $e');
+      }
+
+      if (birthday == null) {
+        print('Could not parse birthday: $birthdayStr');
+        return false;
+      }
 
       final today = DateTime.now();
       
-      // Match JSX logic exactly: compare month and day
-      return today.month == birthday.month && today.day == birthday.day;
+      // Match JSX logic exactly: compare month and day (ignore year)
+      final isValidBirthday = today.month == birthday.month && today.day == birthday.day;
+      
+      print('Birthday check: today=${today.month}/${today.day}, birthday=${birthday.month}/${birthday.day}, valid=$isValidBirthday');
+      
+      return isValidBirthday;
     } catch (e) {
       print('Error checking birthday: $e');
       return false; // Default to not allowing birthday promocode on error
@@ -737,11 +816,9 @@ class PromocodeStore extends GetxController {
   // Helper method to get localized text
   String _getLocalizedText(String key) {
     try {
-      // Use the current context to get localized strings
-      // This is a simplified approach - you might need to adjust based on your localization setup
       switch (key) {
         case 'pleaseEnterPromocode':
-          return 'Please enter promocode'; // Default fallback
+          return 'Please enter promocode';
         case 'promocodeAlreadyUsed':
           return 'Promocode already in use';
         case 'invalidPromocode':
@@ -751,13 +828,13 @@ class PromocodeStore extends GetxController {
         case 'minimumOrderAmount':
           return 'Minimum order amount';
         case 'promocodeValidOnlyOnBirthday':
-          return 'Promocode valid only on birthday';
+          return 'This promocode is only valid on your birthday';
         case 'promocodeValidOnlyForFirstOrder':
-          return 'Promocode valid only for first order';
+          return 'This promocode is only valid for your first order';
         case 'errorApplyingPromocode':
           return 'Error applying promocode';
         case 'promocodeApplied':
-          return 'Promocode applied';
+          return 'Promocode applied successfully';
         case 'bonusProducts':
           return 'Bonus Products';
         case 'discount':
@@ -772,7 +849,6 @@ class PromocodeStore extends GetxController {
           return key;
       }
     } catch (e) {
-      // Fallback to key if localization fails
       return key;
     }
   }

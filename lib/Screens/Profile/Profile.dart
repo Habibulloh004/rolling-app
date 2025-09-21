@@ -18,17 +18,69 @@ import '../CreditCard/Cards.dart';
 import 'Language.dart';
 
 // Helper function to get gender translations
-List<String> getGendersForLanguage(String language) {
-  switch (language) {
-    case 'en':
-      return ['Male', 'Female', 'Other'];
-    case 'uz':
-      return ['Erkak', 'Ayol', 'Boshqa'];
-    case 'ru':
-    default:
-      return ['Мужчина', 'Женщина', 'Другое'];
+  List<String> getGendersForLanguage(String language) {
+    switch (language) {
+      case 'en':
+        return ['Male', 'Female', 'Other'];
+      case 'uz':
+        return ['Erkak', 'Ayol', 'Boshqa'];
+      case 'ru':
+      default:
+        return ['Мужчина', 'Женщина', 'Другое'];
+    }
   }
-}
+
+  // New helper function to get localized gender display
+  String getLocalizedGender(int genderIndex, String language) {
+    List<String> genders = getGendersForLanguage(language);
+    if (genderIndex >= 0 && genderIndex < genders.length) {
+      return genders[genderIndex];
+    }
+    return genders[0]; // Default to first option
+  }
+
+// New helper function to get gender index from stored value
+  int getGenderIndexFromText(String storedGender) {
+    // Check in all languages to find the correct index
+    List<String> englishGenders = getGendersForLanguage('en');
+    List<String> uzbekGenders = getGendersForLanguage('uz');
+    List<String> russianGenders = getGendersForLanguage('ru');
+    
+    int index = englishGenders.indexOf(storedGender);
+    if (index != -1) return index;
+    
+    index = uzbekGenders.indexOf(storedGender);
+    if (index != -1) return index;
+    
+    index = russianGenders.indexOf(storedGender);
+    if (index != -1) return index;
+    
+    return 0; // Default to first option if not found
+  }
+
+// Helper function to get current gender inde
+  int getCurrentGenderIndex() {
+    // First check if we have the index stored
+    if (User.isKeyAvalible('client_sex_index')) {
+      String storedIndex = User.getUserInfo("client_sex_index");
+      
+      // Try to parse the stored string as int
+      if (storedIndex.trim().isNotEmpty && storedIndex.trim() != " ") {
+        return int.tryParse(storedIndex.trim()) ?? 0;
+      }
+    }
+    
+    // If no index, try to get from stored text
+    if (User.isKeyAvalible('client_sex')) {
+      String storedGender = User.getUserInfo("client_sex");
+      if (storedGender.trim().isNotEmpty && storedGender.trim() != " ") {
+        return getGenderIndexFromText(storedGender);
+      }
+    }
+    
+    return 0; // Default
+  }
+  
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -43,6 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   TextEditingController genderController = TextEditingController();
   final regex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
   DateTime selectedDate = DateTime.now();
+  
   @override
   Widget build(BuildContext context) {
     bool doesHaveDateOfBirth = regex.hasMatch(User.getUserInfo("birthday"));
@@ -358,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 1.h,
                     ),
 
-              // Gender
+              // Gender - FIXED VERSION
               !User.isUserExists()
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,8 +445,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  User.isKeyAvalible('client_sex')
-                                      ? User.getUserInfo("client_sex")
+                                  // Fixed gender display - now uses index-based localization
+                                  (User.isKeyAvalible('client_sex_index') || User.isKeyAvalible('client_sex'))
+                                      ? getLocalizedGender(
+                                          getCurrentGenderIndex(),
+                                          Language.getLanguage()
+                                        )
                                       : "${LocaleData.youdonnothaveaccount.getString(context)}",
                                   style: TextStyle(
                                     fontSize: 15.sp,
@@ -430,11 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           children: [
                                             GenderTextField(
                                               controller: genderController,
-                                              initialGender: User.isKeyAvalible(
-                                                      'client_sex')
-                                                  ? User.getUserInfo(
-                                                      "client_sex")
-                                                  : "",
+                                              initialGenderIndex: getCurrentGenderIndex(),
                                             ),
                                             SizedBox(height: 16),
                                             SizedBox(
@@ -451,20 +504,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 onPressed: () {
                                                   if (canUpdateProfile()) {
                                                     setState(() {
-                                                      // Save gender to local storage or API
-                                                      Api.updateUserGender(
-                                                          getGendersForLanguage(
-                                                                  Language
-                                                                      .getLanguage())
-                                                              .indexOf(
-                                                                  genderController
-                                                                      .text));
-                                                      User.addUserInfo(
-                                                          "client_sex",
-                                                          genderController
-                                                              .text);
-                                                      Navigator.pop(
-                                                          context); // Close the bottom sheet
+                                                      // Get the selected gender index
+                                                      int selectedIndex = getGendersForLanguage(
+                                                              Language.getLanguage())
+                                                          .indexOf(genderController.text);
+                                                      
+                                                      // Update API with index
+                                                      Api.updateUserGender(selectedIndex);
+                                                      
+                                                      // Store both index and current text for compatibility
+                                                      User.addUserInfo("client_sex_index", selectedIndex.toString());
+                                                      User.addUserInfo("client_sex", genderController.text);
+                                                      
+                                                      Navigator.pop(context); // Close the bottom sheet
                                                     });
                                                   } else {
                                                     Get.snackbar(
@@ -844,14 +896,15 @@ class _BirthdatePickerState extends State<BirthdatePicker> {
   }
 }
 
+// FIXED GenderTextField Widget
 class GenderTextField extends StatefulWidget {
   final TextEditingController controller;
-  final String initialGender;
+  final int initialGenderIndex;
 
   const GenderTextField({
     Key? key,
     required this.controller,
-    this.initialGender = "", // Default initial value
+    this.initialGenderIndex = 0,
   }) : super(key: key);
 
   @override
@@ -859,21 +912,21 @@ class GenderTextField extends StatefulWidget {
 }
 
 class _GenderTextFieldState extends State<GenderTextField> {
-  final List<String> genders = getGendersForLanguage(Language.getLanguage());
-  int selectedIndex = 0;
+  late List<String> genders;
+  late int selectedIndex;
 
   @override
   void initState() {
     super.initState();
-    // Set initial value in the controller if not already set
-    if (widget.controller.text.isEmpty) {
-      widget.controller.text = widget.initialGender;
-      selectedIndex = genders.indexOf(widget.initialGender);
-      if (selectedIndex == -1) selectedIndex = 0;
-    } else {
-      selectedIndex = genders.indexOf(widget.controller.text);
-      if (selectedIndex == -1) selectedIndex = 0;
+    genders = getGendersForLanguage(Language.getLanguage());
+    selectedIndex = widget.initialGenderIndex;
+    
+    // Ensure selectedIndex is within bounds
+    if (selectedIndex < 0 || selectedIndex >= genders.length) {
+      selectedIndex = 0;
     }
+    
+    widget.controller.text = genders[selectedIndex];
   }
 
   @override
@@ -957,8 +1010,7 @@ class _GenderTextFieldState extends State<GenderTextField> {
                       height: 50,
                       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                       decoration: BoxDecoration(
-                        color: cDarkGreen
-                            .withOpacity(0.5), // Transparent highlight
+                        color: cDarkGreen.withOpacity(0.5), // Transparent highlight
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),

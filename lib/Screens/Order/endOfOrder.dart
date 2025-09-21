@@ -40,7 +40,7 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                         textAlign: TextAlign.center,
                         "${LocaleData.thankyouforchoosingus1.getString(context)} \n ${LocaleData.thankyouforchoosingus2.getString(context)}",
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 26,
                           fontWeight: FontWeight.w700,
                         )),
                   ],
