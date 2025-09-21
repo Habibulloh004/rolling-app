@@ -86,7 +86,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
     if (activePromocode == null) return null;
 
     if (activePromocode.params?.resultType == 1) {
-      // Bonus products promotion
+      // Bonus products promotion (result_type == 1)
       return <Map<String, dynamic>>[
         <String, dynamic>{
           'type': 1,
@@ -98,21 +98,40 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
         }
       ];
     } else {
-      // Discount promotions - find products that match active conditions
+      // result_type 2 or 3 (fixed/percent) → type:2
       final orders = Order.getFullOrder();
       final conditions = activePromocode.params?.conditions ?? [];
 
-      List<Map<String, dynamic>> findProductPromotion = <Map<String, dynamic>>[];
+      // Web logic (order.jsx):
+      // - If condition[0].type == 0 and active and result_type == 3 → include ALL products
+      // - Else include products matching active product conditions (type == 2)
 
-      for (final order in orders) {
-        if (order['promocode'] == true) continue; // Skip bonus products
+      bool includeAll = false;
+      if (conditions.isNotEmpty) {
+        final c0 = conditions.first;
+        if ((c0.type == 0) == true && (c0.active == true) && (activePromocode.params?.resultType == 3)) {
+          includeAll = true;
+        }
+      }
 
-        for (final condition in conditions) {
-          if (condition.type == 2 &&
-              condition.id == order['productId'] &&
-              condition.active == true) {
-            findProductPromotion.add(Map<String, dynamic>.from(order));
-            break;
+      final List<Map<String, dynamic>> regularOrders = orders
+          .where((o) => o['promocode'] != true)
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      List<Map<String, dynamic>> findProductPromotion;
+      if (includeAll) {
+        findProductPromotion = regularOrders;
+      } else {
+        findProductPromotion = <Map<String, dynamic>>[];
+        for (final order in regularOrders) {
+          for (final condition in conditions) {
+            if (condition.type == 2 &&
+                condition.active == true &&
+                condition.id == order['productId']) {
+              findProductPromotion.add(order);
+              break;
+            }
           }
         }
       }
