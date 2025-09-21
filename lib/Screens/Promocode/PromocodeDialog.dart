@@ -228,6 +228,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     return true;
   }
 
+  // Fix for lib/Screens/Promocode/PromocodeDialog.dart
+
   Future<void> applyPromocode(Promocode promocode) async {
     switch (promocode.params?.resultType) {
       case 1: // Bonus products
@@ -240,11 +242,14 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           );
 
           if (productData != null) {
+            // ✅ Fixed: Store description for translation and use splitTextFromCategory for display name
+            final rawDescription = productData['product_production_description']?.toString() ?? '';
+            
             // Add to order using your existing Order class
             Map<String, dynamic> orderData = {
               'productId': productData['product_id'].toString(),
-              'name': productData['product_name'] ?? '',
-              'description': productData['product_production_description'] ?? '',
+              'name': splitText(rawDescription.isNotEmpty ? rawDescription : productData['product_name'] ?? ''), // Use splitText
+              'description': rawDescription, // Store raw description for translation
               'ingredients': '',
               'price': '0', // Bonus product is free
               'weight': productData['out']?.toString() ?? '',

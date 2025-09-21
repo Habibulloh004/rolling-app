@@ -300,6 +300,8 @@ class PromocodeStore extends GetxController {
     return true;
   }
 
+  // Fix for lib/Store/PromocodeStore.dart
+
   Future<bool> _applyPromocodeByType(
       Promocode promocode,
       List<dynamic> productsData,
@@ -315,10 +317,13 @@ class PromocodeStore extends GetxController {
 
         final bonusProductsList = <Product>[];
         for (final prd in filterProducts) {
+          // ✅ Fixed: Store description for translation
+          final rawDescription = prd['product_production_description']?.toString() ?? '';
+          
           final product = Product(
             productId: prd['product_id'].toString(),
-            name: prd['product_name'] ?? '',
-            description: prd['product_production_description'] ?? '',
+            name: splitText(rawDescription.isNotEmpty ? rawDescription : prd['product_name'] ?? ''), // Use splitText
+            description: rawDescription, // Store raw description for translation
             ingredients: '',
             price: '0',
             weight: prd['out']?.toString() ?? '',
@@ -331,8 +336,8 @@ class PromocodeStore extends GetxController {
           // Add to order with promocode flag
           final orderData = {
             'productId': product.productId,
-            'name': product.name,
-            'description': product.description,
+            'name': product.name, // Already translated name
+            'description': product.description, // Raw description for future translation
             'ingredients': product.ingredients,
             'price': product.price,
             'weight': product.weight,

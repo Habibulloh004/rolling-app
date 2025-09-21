@@ -111,6 +111,11 @@ mixin LocaleData {
   static const String sex = "sex";
   static const String cooldown = "cooldown";
 
+  // Gender translations
+  static const String male = "male";
+  static const String female = "female";
+  static const String other = "other";
+
   // Promocode related translations
   static const String promocode = "promocode";
   static const String promocodeActive = "promocodeActive";
@@ -138,6 +143,8 @@ mixin LocaleData {
   static const String bonus = "bonus";
   static const String gift = "gift";
   static const String bonusProducts = "bonusProducts";
+  static const String discountApplied = "discountApplied";
+  static const String promocodeDiscount = "promocodeDiscount";
 
   static const Map<String, dynamic> EN = {
     category: "Category",
@@ -244,6 +251,11 @@ mixin LocaleData {
     sex: "Gender",
     cooldown: "Change limit reached",
 
+    // Gender translations
+    male: "Male",
+    female: "Female", 
+    other: "Other",
+
     // Promocode translations
     promocode: "Promocode",
     promocodeActive: "Promocode Active",
@@ -271,6 +283,8 @@ mixin LocaleData {
     bonus: "Bonus",
     gift: "Gift",
     bonusProducts: "Bonus Products",
+    discountApplied: "Discount Applied",
+    promocodeDiscount: "Promocode Discount",
   };
 
   static const Map<String, dynamic> RU = {
@@ -378,6 +392,11 @@ mixin LocaleData {
     sex: "Пол",
     cooldown: "Лимит изменений достигнут",
 
+    // Gender translations
+    male: "Мужчина",
+    female: "Женщина",
+    other: "Другое",
+
     // Promocode translations
     promocode: "Промокод",
     promocodeActive: "Промокод активен",
@@ -405,6 +424,8 @@ mixin LocaleData {
     bonus: "Бонус",
     gift: "Подарок",
     bonusProducts: "Бонусные продукты",
+    discountApplied: "Скидка применена",
+    promocodeDiscount: "Скидка по промокоду",
   };
 
   static const Map<String, dynamic> UZ = {
@@ -512,6 +533,11 @@ mixin LocaleData {
     sex: "Jins",
     cooldown: "O'zgartirish chegarasi yetdi",
 
+    // Gender translations
+    male: "Erkak",
+    female: "Ayol",
+    other: "Boshqa",
+
     // Promocode translations
     promocode: "Promokod",
     promocodeActive: "Promokod faol",
@@ -539,5 +565,7 @@ mixin LocaleData {
     bonus: "Bonus",
     gift: "Sovg'a",
     bonusProducts: "Bonus mahsulotlar",
+    discountApplied: "Chegirma qo'llandi",
+    promocodeDiscount: "Promokod bo'yicha chegirma",
   };
 }

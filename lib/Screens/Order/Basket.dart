@@ -180,7 +180,7 @@ class _BasketScreenState extends State<BasketScreen> {
                         child: SafeArea(
                           top: false,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 30),
+                            padding: EdgeInsets.symmetric(horizontal: 30.w),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               // Yuqori blok + qo'shimcha bo'shliq + pastki blok (confirm)
@@ -514,15 +514,15 @@ class _BasketScreenState extends State<BasketScreen> {
     }
   }
 
-  // This is the key section that needs to be updated in BasketBonus.dart
-// Replace the basketInfo() method to use proper translations:
+  // Fix for lib/Screens/Order/Basket.dart - basketInfo() method
+// Replace the existing basketInfo() method with this translated version:
 
   List<Widget> basketInfo() {
     List<Widget> result = [];
 
     result = List.generate(
       Order.getOrderLength(),
-          (index) {
+      (index) {
         final orderItem = Order.getOrderAt(index);
         final isPromoItem = orderItem['promocode'] == true;
 
@@ -587,7 +587,7 @@ class _BasketScreenState extends State<BasketScreen> {
                       children: [
                         Text(
                           isPromoItem
-                              ? LocaleData.free.getString(context)
+                              ? LocaleData.free.getString(context) // ✅ Now uses LocaleData
                               : "${orderItem['price'] ?? '0'} ${LocaleData.som.getString(context)}",
                           style: TextStyle(
                             fontSize: 17.sp,
@@ -607,7 +607,7 @@ class _BasketScreenState extends State<BasketScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              LocaleData.bonus.getString(context),
+                              LocaleData.bonus.getString(context), // ✅ Now uses LocaleData
                               style: TextStyle(
                                 fontSize: 10,
                                 color: Colors.green.shade700,
@@ -619,7 +619,10 @@ class _BasketScreenState extends State<BasketScreen> {
                       ],
                     ),
                     Text(
-                      orderItem['name'] ?? '',
+                      // ✅ Fixed: Use splitText for product descriptions
+                      isPromoItem && orderItem['description'] != null && orderItem['description'].toString().isNotEmpty
+                          ? splitText(orderItem['description']) // Use splitText for product descriptions
+                          : orderItem['name'] ?? '', // Fallback to regular name
                       style: TextStyle(
                         fontSize: 17,
                         color: cDarkGreen,
@@ -739,7 +742,7 @@ class _BasketScreenState extends State<BasketScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              LocaleData.gift.getString(context),
+                              LocaleData.gift.getString(context), // ✅ Now uses LocaleData
                               style: TextStyle(
                                 color: Colors.green.shade700,
                                 fontSize: 12,

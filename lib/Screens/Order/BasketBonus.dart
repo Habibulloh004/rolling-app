@@ -15,6 +15,7 @@ import '../../Localzition/locals.dart';
 import '../Authentication/RegistrationScreen.dart';
 import '../Menu/Menu.dart';
 import 'PaymentAndLocation.dart';
+import '../../Consts/Functions.dart'; 
 
 class BasketBonusScreen extends StatefulWidget {
   @override
@@ -36,7 +37,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
           },
           color: cDarkGreen,
         ),
-        title: Text('Корзина'),
+        title: Text(LocaleData.basket.getString(context)),
       ),
       body: Column(
         children: [
@@ -86,22 +87,22 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                       builder: (BuildContext context, AsyncSnapshot snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return Text("Загрузка...",
+                          return Text(LocaleData.bonuses.getString(context),
                               style: TextStyle(color: Colors.white));
                         } else if (snapshot.hasError) {
-                          return Text("Ошибка: ",
+                          return Text(LocaleData.somethingwentwrong.getString(context),
                               style: TextStyle(color: Colors.white));
                         } else {
                           bonus =
-                              snapshot.data['string'] == "что-то пошло не так"
+                              snapshot.data['string'] == LocaleData.somethingwentwrong.getString(context)
                                   ? 0
                                   : snapshot.data['int'];
                           bonusString = snapshot.data['string'];
 
                           return Text(
-                            snapshot.data['string'] == "что-то пошло не так"
-                                ? "что-то пошло не та"
-                                : " ${LocaleData.availablebonuses.getString(context)} ${snapshot.data['string']} сум",
+                            snapshot.data['string'] == LocaleData.somethingwentwrong.getString(context)
+                                ? LocaleData.somethingwentwrong.getString(context)
+                                : " ${LocaleData.availablebonuses.getString(context)} ${snapshot.data['string']} ${LocaleData.som.getString(context)}",
                             style: TextStyle(
                               fontSize: 17,
                               color: Colors.white,
@@ -157,7 +158,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                         print(bonus);
                         if (int.parse(bonusController.text) > bonus) {
                           Get.snackbar(
-                            'Неверный номер', // title
+                            LocaleData.wrongphonenumber.getString(context), // title
                             '', // message
                             snackPosition:
                                 SnackPosition.BOTTOM, // Display at the bottom
@@ -166,7 +167,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                           );
                         } else if (int.parse(bonusController.text) <= -1) {
                           Get.snackbar(
-                            'Неверный номер', // title
+                            LocaleData.wrongphonenumber.getString(context), // title
                             '', // message
                             snackPosition:
                                 SnackPosition.BOTTOM, // Display at the bottom
@@ -197,7 +198,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                             }
                           } else {
                             Get.snackbar(
-                              'Вы используете больше бонусов, чем стоимость заказа', // title
+                              LocaleData.somethingwentwrong.getString(context), // title
                               '', // message
                               snackPosition:
                                   SnackPosition.BOTTOM, // Display at the bottom
@@ -235,7 +236,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
 
     result = List.generate(
       Order.getOrderLength(),
-          (index) {
+      (index) {
         final orderItem = Order.getOrderAt(index);
         final isPromoItem = orderItem['promocode'] == true;
 
@@ -300,7 +301,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                       children: [
                         Text(
                           isPromoItem
-                              ? "Бесплатно"
+                              ? LocaleData.free.getString(context)
                               : "${orderItem['price'] ?? '0'} ${LocaleData.som.getString(context)}",
                           style: TextStyle(
                             fontSize: 17.sp,
@@ -320,7 +321,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'Бонус',
+                              LocaleData.bonus.getString(context),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: Colors.green.shade700,
@@ -332,7 +333,10 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                       ],
                     ),
                     Text(
-                      orderItem['name'] ?? '',
+                      // ✅ Fixed: Use splitText for product descriptions
+                      isPromoItem && orderItem['description'] != null && orderItem['description'].toString().isNotEmpty
+                          ? splitText(orderItem['description']) // Use splitText for product descriptions
+                          : orderItem['name'] ?? '', // Fallback to regular name
                       style: TextStyle(
                         fontSize: 17,
                         color: cDarkGreen,
@@ -452,7 +456,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Подарок',
+                              LocaleData.gift.getString(context),
                               style: TextStyle(
                                 color: Colors.green.shade700,
                                 fontSize: 12,
@@ -464,12 +468,8 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                           onTap: () {
                             setState(() {
                               if (isPromoItem) {
-                                // If deleting a bonus product, you might want to handle
-                                // promocode removal here if you have promocode logic
-                                // For now, just delete the item
                                 Order.deleteOrderAt(index);
                               } else {
-                                // Regular product deletion
                                 Order.deleteOrderAt(index);
                               }
 
@@ -479,10 +479,9 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                             });
                           },
                           child: Container(
-                            padding: EdgeInsets.all(
-                                4), // Padding to shrink the size of the container
+                            padding: EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: cWhite, // Background color of the container
+                              color: cWhite,
                               borderRadius: BorderRadius.circular(8.0),
                               border: Border.all(color: Colors.grey.shade300),
                               boxShadow: [
@@ -492,7 +491,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                                   blurRadius: 10,
                                   offset: Offset(0, 5),
                                 ),
-                              ], // Corner radius
+                              ],
                             ),
                             child: Icon(
                               Icons.delete,

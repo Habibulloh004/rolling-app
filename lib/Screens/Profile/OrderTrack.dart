@@ -13,6 +13,7 @@ import 'package:sushi_alpha_project/LocalMemory/HistoryOrder.dart';
 import '../../Backend/Api.dart';
 import '../../Components/Profile/OrderTrack/MyTimeLine.dart';
 import '../../Localzition/locals.dart';
+import '../../Consts/Functions.dart'; 
 
 class OrderTrackScreen extends StatefulWidget {
   const OrderTrackScreen({super.key});
@@ -290,6 +291,8 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
     );
   }
 
+  // Fix for lib/Screens/Profile/OrderTrack.dart - products() method
+
   List<Widget> products() {
     List<Widget> result = [];
     List data = HistoryOrder.getHistoryOrderProducts(info['id']);
@@ -341,7 +344,7 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                     children: [
                       Text(
                         isPromoItem
-                            ? "Бесплатно"
+                            ? LocaleData.free.getString(context)
                             : "${productData['price']} ${LocaleData.som.getString(context)}",
                         style: TextStyle(
                           fontSize: 17,
@@ -361,7 +364,7 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'Бонус',
+                            LocaleData.bonus.getString(context),
                             style: TextStyle(
                               fontSize: 10,
                               color: Colors.green.shade700,
@@ -373,7 +376,10 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                     ],
                   ),
                   Text(
-                    "${productData['name']}",
+                    // ✅ Fixed: Use splitText for product descriptions
+                    isPromoItem && productData['description'] != null && productData['description'].toString().isNotEmpty
+                        ? splitText(productData['description']) // Use splitText for product descriptions
+                        : productData['name'] ?? '', // Fallback to regular name
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(
@@ -404,7 +410,7 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'Подарок',
+                            LocaleData.gift.getString(context),
                             style: TextStyle(
                               color: Colors.green.shade700,
                               fontSize: 10,

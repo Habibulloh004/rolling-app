@@ -17,6 +17,19 @@ import '../Authentication/RegistrationScreen.dart';
 import '../CreditCard/Cards.dart';
 import 'Language.dart';
 
+// Helper function to get gender translations
+List<String> getGendersForLanguage(String language) {
+  switch (language) {
+    case 'en':
+      return ['Male', 'Female', 'Other'];
+    case 'uz':
+      return ['Erkak', 'Ayol', 'Boshqa'];
+    case 'ru':
+    default:
+      return ['Мужчина', 'Женщина', 'Другое'];
+  }
+}
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -82,15 +95,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                        User.isKeyAvalible('name')
-                            ? User.getUserInfo("name")
-                            : "${LocaleData.youdonnothaveaccount.getString(context)}",
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: cBlack,
-                          fontWeight: FontWeight.w400,
-                        )),
+                    Expanded(
+                      child: Text(
+                          User.isKeyAvalible('name')
+                              ? User.getUserInfo("name")
+                              : "${LocaleData.youdonnothaveaccount.getString(context)}",
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: cBlack,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     IconButton(
                         onPressed: () {
                           if (!User.isUserExists()) {
@@ -227,15 +245,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                        User.isKeyAvalible('phone')
-                            ? User.getUserInfo('phone')
-                            : "${LocaleData.youdonnothaveaccount.getString(context)}",
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: cBlack,
-                          fontWeight: FontWeight.w400,
-                        )),
+                    Expanded(
+                      child: Text(
+                          User.isKeyAvalible('phone')
+                              ? User.getUserInfo('phone')
+                              : "${LocaleData.youdonnothaveaccount.getString(context)}",
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            color: cBlack,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -245,6 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        SizedBox(height: 5.h),
                         Container(
                           padding: EdgeInsets.only(left: 10.w),
                           child: Text(
@@ -273,16 +297,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                  User.isKeyAvalible('birthday')
-                                      ? User.getUserInfo("birthday")
-                                      // we do not have the information
-                                      : "${LocaleData.youdonnothaveaccount.getString(context)}",
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    color: cBlack,
-                                    fontWeight: FontWeight.w400,
-                                  )),
+                              Expanded(
+                                child: Text(
+                                    User.isKeyAvalible('birthday')
+                                        ? User.getUserInfo("birthday")
+                                        // we do not have the information
+                                        : "${LocaleData.youdonnothaveaccount.getString(context)}",
+                                    style: TextStyle(
+                                      fontSize: 15.sp,
+                                      color: cBlack,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                               !doesHaveDateOfBirth
                                   ? IconButton(
                                       onPressed: () async {
@@ -334,6 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        SizedBox(height: 5.h),
                         Container(
                           padding: EdgeInsets.only(left: 10.w),
                           child: Text(
@@ -360,14 +390,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                User.isKeyAvalible('client_sex')
-                                    ? User.getUserInfo("client_sex")
-                                    : "${LocaleData.youdonnothaveaccount.getString(context)}",
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  color: cBlack,
-                                  fontWeight: FontWeight.w400,
+                              Expanded(
+                                child: Text(
+                                  User.isKeyAvalible('client_sex')
+                                      ? User.getUserInfo("client_sex")
+                                      : "${LocaleData.youdonnothaveaccount.getString(context)}",
+                                  style: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: cBlack,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               IconButton(
@@ -579,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: "",
                                 titleStyle: TextStyle(fontSize: 20),
                                 middleText:
-                                    "${LocaleData.areyouherefirsttime.getString(context)}",
+                                    "${LocaleData.areyousureyouwanttocontinue.getString(context)}",
                                 middleTextStyle: TextStyle(fontSize: 16),
                                 radius: 5, // Радиус углов диалога
                                 backgroundColor: Colors.white,
@@ -835,8 +869,10 @@ class _GenderTextFieldState extends State<GenderTextField> {
     if (widget.controller.text.isEmpty) {
       widget.controller.text = widget.initialGender;
       selectedIndex = genders.indexOf(widget.initialGender);
+      if (selectedIndex == -1) selectedIndex = 0;
     } else {
       selectedIndex = genders.indexOf(widget.controller.text);
+      if (selectedIndex == -1) selectedIndex = 0;
     }
   }
 
