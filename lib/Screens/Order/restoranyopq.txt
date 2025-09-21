@@ -1,0 +1,212 @@
+if (!isAllowedToTakeOrder) {
+                                  Navigator.pop(context);
+                                  Get.snackbar(
+                                    "${LocaleData.therestaurantisclosed.getString(context)}", // title
+                                    '', // message
+                                    snackPosition: SnackPosition
+                                        .BOTTOM, // Display at the bottom
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                } else {
+                                  // Navigator.pop(context);
+                                  if (MapLocation.isNoMaps()) {
+                                    Navigator.pop(context);
+                                    Get.snackbar(
+                                      "${LocaleData.firstselectalocation.getString(context)}", // title
+                                      '', // message
+                                      snackPosition: SnackPosition
+                                          .BOTTOM, // Display at the bottom
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                    );
+                                  } else {
+                                    FirebaseMessaging messaging =
+                                        FirebaseMessaging.instance;
+
+                                    String? fcmToken =
+                                        await messaging.getToken();
+
+                                    final int payed_sum = typeOfOrder ==
+                                            "delivery"
+                                        ? (Bonus.isBonusExists()
+                                                ? getOrderPriceWithDeliveryAndBonusInt
+                                                : getOrderPriceWithDeliveryInt) *
+                                            100
+                                        : (Bonus.isBonusExists()
+                                                ? getOrderPriceWithBonusInt
+                                                : orderPriceAfterPromoInt) *
+                                            100;
+
+                                    // Build promo-aware comment similar to website
+                                    String commentSpot = "";
+                                    if (promocodeStore.hasActivePromocode()) {
+                                      final promoName = promocodeStore.getPromocodeName();
+                                      if (promoName.isNotEmpty) {
+                                        commentSpot += "\nПромокод:${promoName}";
+                                      }
+                                      final promoSum = promocodeStore.promocodePrice.value;
+                                      if (promoSum > 0) {
+                                        commentSpot += "\nПромокодSum: ${promoSum.toInt()}";
+                                      }
+                                      final promoPercent = promocodeStore.discountPromocode.value > 0
+                                          ? promocodeStore.discountPromocode.value
+                                          : promocodeStore.discountPromocodeProduct.value;
+                                      if (promoPercent > 0) {
+                                        commentSpot += "\nСкидка: ${promoPercent.toInt()}%";
+                                      }
+                                    }
+                                    commentSpot += "\nТип заказа: Через мобильное приложение";
+
+                                    Map<String, dynamic> orderMapData = {
+                                      'created_at': formattedDateTime,
+                                      'type': typeOfOrder == "delivery"
+                                          ? typeOfOrder
+                                          : typeOfOrder +
+                                              " " +
+                                              restaurantText[indexOfResturant],
+                                      'products': Order.getOrderAmountAndId()
+                                          .toString(),
+                                      'client_address': getLatLong().toString(),
+                                      'client_id':
+                                          User.getUserInfo('id').toString(),
+                                      'phone':
+                                          User.getUserInfo('phone').toString(),
+                                      'comment': commentSpot.isEmpty ? "no" : commentSpot,
+                                      // all_price = original total without bonus discount
+                                      // (backend can compute promocode discount from provided promocode data)
+                                      'all_price': typeOfOrder == "delivery"
+                                          ? (orderPriceInt + deliveryPriceInt) * 100
+                                          : orderPriceInt * 100,
+                                      'payment':
+                                          creditCard ? "creditCard" : "cash",
+                                      "promotion": "no",
+                                      // Match web payload: array of promotion entries
+                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : '',
+                                      'status': '',
+                                      'spot_id': '0',
+                                      'payed_bonus': Bonus.isBonusExists()
+                                          ? bonusInt * 100
+                                          : 0,
+                                      'payed_sum': payed_sum,
+                                      'fcm': fcmToken,
+                                      'fcm_lng': Language.getLanguage(),
+                                      "address_comment":
+                                          addressCommentController.text
+                                      //addressCommentController
+                                    };
+
+                                    int priceOfOrder = typeOfOrder == "delivery"
+                                        ? (Bonus.isBonusExists()
+                                            ? getOrderPriceWithDeliveryAndBonusInt
+                                            : getOrderPriceWithDeliveryInt)
+                                        : (Bonus.isBonusExists()
+                                            ? getOrderPriceWithBonusInt
+                                            : orderPriceAfterPromoInt);
+
+                                    String priceOfOrderString = typeOfOrder ==
+                                            "delivery"
+                                        ? _fmt(Bonus.isBonusExists()
+                                            ? getOrderPriceWithDeliveryAndBonusInt
+                                            : getOrderPriceWithDeliveryInt)
+                                        : _fmt(Bonus.isBonusExists()
+                                            ? getOrderPriceWithBonusInt
+                                            : orderPriceAfterPromoInt);
+
+                                    Map infoToLastScreen = {
+                                      'orderType': typeOfOrder == "delivery"
+                                          ? typeOfOrder
+                                          : typeOfOrder +
+                                              " " +
+                                              restaurantText[indexOfResturant],
+                                      'discount': promocodeStore.hasActivePromocode(),
+                                      'itogo': priceOfOrderString,
+                                      'bonus': Bonus.isBonusExists()
+                                          ? bonusStr +
+                                              " ${LocaleData.som.getString(context)}"
+                                          : "0 ${LocaleData.som.getString(context)}",
+                                      'time': formattedDateTime,
+                                      'deliveryPrice': deliveryPriceStr,
+                                    };
+
+                                    if (creditCard) {
+                                      if (CreditCard.getCreditCardName()
+                                          is! String) {
+                                        Get.off(
+                                          () => CardScreen(),
+                                          arguments: "fromPaymentAndLocation",
+                                        );
+                                        CreditCard.setUserChoseCard();
+                                      } else {
+                                        Map<String, String> data =
+                                            await Api.payCreditCard(
+                                                priceOfOrder);
+                                        //chech if work or not
+                                        if (data['status'] != "failed") {
+                                          //Make the order
+                                          Get.off(() => CardOTP(), arguments: [
+                                            orderMapData,
+                                            data['session'],
+                                            infoToLastScreen,
+                                          ]);
+                                        } else {
+                                          Navigator.pop(context);
+                                          Get.snackbar(
+                                            "${LocaleData.somethingwentwrong.getString(context)}", // title
+                                            '${LocaleData.checkyourcard.getString(context)}', // message
+                                            snackPosition: SnackPosition
+                                                .BOTTOM, // Display at the bottom
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                          );
+                                          Navigator.pop(context);
+                                        }
+                                      }
+                                    } else {
+                                      //Cashe payment
+
+                                      String orderId =
+                                          await Api.giveOrder(orderMapData);
+                                      if (orderId == 'error') {
+                                        Get.snackbar(
+                                          "${LocaleData.somethingwentwrong.getString(context)}", // title
+                                          '', // message
+                                          snackPosition: SnackPosition
+                                              .BOTTOM, // Display at the bottom
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                        );
+                                      } else {
+                                        // Up gerding the client group
+                                        await userUpDateGroupe();
+
+                                        // //current date
+                                        DateTime now = DateTime.now();
+                                        String formattedDateTime =
+                                            DateFormat('dd.MM.yyyy HH:mm')
+                                                .format(now);
+
+                                        Map data = {
+                                          'id': orderId,
+                                          'date': formattedDateTime,
+                                          'priceOfOrderString':
+                                              priceOfOrderString,
+                                          'products': Order.getFullOrder(),
+                                          'payment_method': 'cash',
+                                          'type': typeOfOrder == "delivery"
+                                              ? typeOfOrder
+                                              : typeOfOrder +
+                                                  " " +
+                                                  restaurantText[
+                                                      indexOfResturant],
+                                        };
+
+                                        //Add order to history Localy
+                                        HistoryOrder.addHistoryOrder(data);
+
+                                        Get.offAll(() => EndOFOrderScreen(),
+                                            arguments: infoToLastScreen);
+                                      }
+                                    }
+                                  }
+                                }

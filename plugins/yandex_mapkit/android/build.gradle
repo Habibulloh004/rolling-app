@@ -1,3 +1,5 @@
+android {
+    namespace "com.unact.yandexmapkit"
 group 'com.unact.yandexmapkit'
 version '1.0-SNAPSHOT'
 
@@ -22,6 +24,7 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
+    namespace 'com.unact.yandexmapkit'
     compileSdkVersion 31
 
     defaultConfig {

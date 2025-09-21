@@ -98,8 +98,8 @@ PODS:
     - Flutter
   - yandex_mapkit (0.0.1):
     - Flutter
-    - YandexMapsMobile (= 4.2.2-full)
-  - YandexMapsMobile (4.2.2-full)
+    - YandexMapsMobile (= 4.6.1-lite)
+  - YandexMapsMobile (4.6.1-lite)
 
 DEPENDENCIES:
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
@@ -195,8 +195,8 @@ SPEC CHECKSUMS:
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
-  yandex_mapkit: bd54223f47feaad47f20ed8a355704e4992bf768
-  YandexMapsMobile: 1fd5f86bc368ad6ba528b199f9477e4a26796567
+  yandex_mapkit: d9c479705f0f3888a3fc67b0d9c6156108e74270
+  YandexMapsMobile: 7e20ef4db180b901c96f8107fade91d6349248a0
 
 PODFILE CHECKSUM: 9b6bf9c2a04c57a4ce038b1f9592ef7ed7f596f1
 

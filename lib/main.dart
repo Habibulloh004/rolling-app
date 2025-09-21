@@ -482,26 +482,28 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff004032),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 250.w,
-              height: 250.h,
-              child: Lottie.asset(
-                "assets/images/logoLottie.json",
-                repeat: false,
-                onLoaded: (composition) {
-                  // Animation loaded
-                },
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 250.w,
+                height: 250.h,
+                child: Lottie.asset(
+                  "assets/images/logoLottie.json",
+                  repeat: false,
+                  onLoaded: (composition) {
+                    // Animation loaded
+                  },
+                ),
               ),
-            ),
-            SizedBox(height: 20.h),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ],
+              SizedBox(height: 20.h),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -515,57 +517,64 @@ class ErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80.sp,
-              color: Colors.red,
-            ),
-            SizedBox(height: 20.h),
-            Text(
-              "Произошла ошибка",
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xff004032),
-              ),
-            ),
-            SizedBox(height: 10.h),
-            Text(
-              "Пожалуйста, попробуйте еще раз",
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 30.h),
-            ElevatedButton(
-              onPressed: () {
-                // Restart app
-                Get.offAll(() => const UpdateWrapper());
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff004032),
-                padding: EdgeInsets.symmetric(
-                  horizontal: 40.w,
-                  vertical: 12.h,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 80.sp,
+                  color: Colors.red,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                SizedBox(height: 20.h),
+                Text(
+                  "Произошла ошибка",
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xff004032),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              child: Text(
-                "Повторить",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.sp,
+                SizedBox(height: 10.h),
+                Text(
+                  "Пожалуйста, попробуйте еще раз",
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+                SizedBox(height: 30.h),
+                ElevatedButton(
+                  onPressed: () {
+                    // Restart app
+                    Get.offAll(() => const UpdateWrapper());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff004032),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 40.w,
+                      vertical: 12.h,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "Повторить",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

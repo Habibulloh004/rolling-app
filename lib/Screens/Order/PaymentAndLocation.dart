@@ -86,7 +86,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
     if (activePromocode == null) return null;
 
     if (activePromocode.params?.resultType == 1) {
-      // Bonus products promotion (result_type == 1)
+      // Bonus products promotion
       return <Map<String, dynamic>>[
         <String, dynamic>{
           'type': 1,
@@ -98,40 +98,21 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
         }
       ];
     } else {
-      // result_type 2 or 3 (fixed/percent) → type:2
+      // Discount promotions - find products that match active conditions
       final orders = Order.getFullOrder();
       final conditions = activePromocode.params?.conditions ?? [];
 
-      // Web logic (order.jsx):
-      // - If condition[0].type == 0 and active and result_type == 3 → include ALL products
-      // - Else include products matching active product conditions (type == 2)
+      List<Map<String, dynamic>> findProductPromotion = <Map<String, dynamic>>[];
 
-      bool includeAll = false;
-      if (conditions.isNotEmpty) {
-        final c0 = conditions.first;
-        if ((c0.type == 0) == true && (c0.active == true) && (activePromocode.params?.resultType == 3)) {
-          includeAll = true;
-        }
-      }
+      for (final order in orders) {
+        if (order['promocode'] == true) continue; // Skip bonus products
 
-      final List<Map<String, dynamic>> regularOrders = orders
-          .where((o) => o['promocode'] != true)
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-
-      List<Map<String, dynamic>> findProductPromotion;
-      if (includeAll) {
-        findProductPromotion = regularOrders;
-      } else {
-        findProductPromotion = <Map<String, dynamic>>[];
-        for (final order in regularOrders) {
-          for (final condition in conditions) {
-            if (condition.type == 2 &&
-                condition.active == true &&
-                condition.id == order['productId']) {
-              findProductPromotion.add(order);
-              break;
-            }
+        for (final condition in conditions) {
+          if (condition.type == 2 &&
+              condition.id == order['productId'] &&
+              condition.active == true) {
+            findProductPromotion.add(Map<String, dynamic>.from(order));
+            break;
           }
         }
       }
@@ -1043,26 +1024,6 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                                 : orderPriceAfterPromoInt) *
                                             100;
 
-                                    // Build promo-aware comment similar to website
-                                    String commentSpot = "";
-                                    if (promocodeStore.hasActivePromocode()) {
-                                      final promoName = promocodeStore.getPromocodeName();
-                                      if (promoName.isNotEmpty) {
-                                        commentSpot += "\nПромокод:${promoName}";
-                                      }
-                                      final promoSum = promocodeStore.promocodePrice.value;
-                                      if (promoSum > 0) {
-                                        commentSpot += "\nПромокодSum: ${promoSum.toInt()}";
-                                      }
-                                      final promoPercent = promocodeStore.discountPromocode.value > 0
-                                          ? promocodeStore.discountPromocode.value
-                                          : promocodeStore.discountPromocodeProduct.value;
-                                      if (promoPercent > 0) {
-                                        commentSpot += "\nСкидка: ${promoPercent.toInt()}%";
-                                      }
-                                    }
-                                    commentSpot += "\nТип заказа: Через мобильное приложение";
-
                                     Map<String, dynamic> orderMapData = {
                                       'created_at': formattedDateTime,
                                       'type': typeOfOrder == "delivery"
@@ -1077,7 +1038,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                           User.getUserInfo('id').toString(),
                                       'phone':
                                           User.getUserInfo('phone').toString(),
-                                      'comment': commentSpot.isEmpty ? "no" : commentSpot,
+                                      'comment': "no",
                                       // all_price = original total without bonus discount
                                       // (backend can compute promocode discount from provided promocode data)
                                       'all_price': typeOfOrder == "delivery"
@@ -1086,8 +1047,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                       'payment':
                                           creditCard ? "creditCard" : "cash",
                                       "promotion": "no",
-                                      // Match web payload: array of promotion entries
-                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : '',
+                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : 'no',
                                       'status': '',
                                       'spot_id': '0',
                                       'payed_bonus': Bonus.isBonusExists()
@@ -1124,7 +1084,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                           : typeOfOrder +
                                               " " +
                                               restaurantText[indexOfResturant],
-                                      'discount': promocodeStore.hasActivePromocode(),
+                                      'discount': false,
                                       'itogo': priceOfOrderString,
                                       'bonus': Bonus.isBonusExists()
                                           ? bonusStr +

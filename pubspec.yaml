@@ -56,8 +56,7 @@ dependencies:
   hive:
   hive_flutter:
   # Use locally patched plugin to fix Swift simulator check
-  yandex_mapkit:
-    path: plugins/yandex_mapkit
+  yandex_mapkit: ^4.1.0
   geolocator: ^14.0.2
   font_awesome_flutter: ^10.7.0
   url_launcher: ^6.2.6

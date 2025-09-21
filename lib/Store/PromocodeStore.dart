@@ -6,6 +6,7 @@ import '../Models/Product.dart';
 import '../LocalMemory/Order.dart';
 import '../LocalMemory/User.dart';
 import '../Consts/Functions.dart';
+import '../Backend/Api.dart';
 
 class PromocodeStore extends GetxController {
   static PromocodeStore get to => Get.find();
@@ -348,6 +349,7 @@ class PromocodeStore extends GetxController {
         setPromocodePrice(discountValue);
         break;
 
+      // Replace the case 3 section in _applyPromocodeByType method
       case 3: // Percentage discount - matching JSX logic
         final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
 
@@ -360,7 +362,7 @@ class PromocodeStore extends GetxController {
           }
         }
 
-        // First order check - matching JSX logic
+        // First order check - matching JSX logic  
         if (promocodeName == 'first20') {
           final isFirstOrder = await _checkFirstOrder();
           if (!isFirstOrder) {
@@ -371,56 +373,171 @@ class PromocodeStore extends GetxController {
 
         final discountValue = promocode.params?.discountValue?.toDouble() ?? 0;
 
-        // If condition is product-specific, store as product-only percent discount
+        // Determine which discount type to apply based on conditions
         final conditions = promocode.params?.conditions ?? [];
-        final hasProductCondition = conditions.any((c) => c.type == 2);
-        final hasCategoryCondition = conditions.any((c) => c.type == 1);
+        bool hasSpecificCondition = false;
+        
+        // Check if there are specific product or category conditions
+        for (final condition in conditions) {
+          if (condition.type == 2 || condition.type == 1) { // Product or category specific
+            hasSpecificCondition = true;
+            break;
+          }
+        }
 
-        if (hasProductCondition || hasCategoryCondition) {
+        if (hasSpecificCondition) {
           setDiscountPromocodeProduct(discountValue);
         } else {
+          // For general conditions (type 0) or no specific conditions
           setDiscountPromocode(discountValue);
         }
         break;
+      // case 3: // Percentage discount - matching JSX logic
+      //   final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
+
+      //   // Birthday check - matching JSX logic
+      //   if (promocodeName == 'bday20') {
+      //     final isValidBirthday = await _checkBirthday();
+      //     if (!isValidBirthday) {
+      //       onError('Промокод действителен только в день рождения');
+      //       return false;
+      //     }
+      //   }
+
+      //   // First order check - matching JSX logic
+      //   if (promocodeName == 'first20') {
+      //     final isFirstOrder = await _checkFirstOrder();
+      //     if (!isFirstOrder) {
+      //       onError('Промокод действителен только для первого заказа');
+      //       return false;
+      //     }
+      //   }
+
+      //   final discountValue = promocode.params?.discountValue?.toDouble() ?? 0;
+
+      //   // If condition is product-specific, store as product-only percent discount
+      //   final conditions = promocode.params?.conditions ?? [];
+      //   final hasProductCondition = conditions.any((c) => c.type == 2);
+      //   final hasCategoryCondition = conditions.any((c) => c.type == 1);
+
+      //   if (hasProductCondition || hasCategoryCondition) {
+      //     setDiscountPromocodeProduct(discountValue);
+      //   } else {
+      //     setDiscountPromocode(discountValue);
+      //   }
+      //   break;
     }
     return true;
   }
 
+  // Future<bool> _checkBirthday() async {
+  //   try {
+  //     if (!User.isKeyAvalible('birthday')) return false;
+
+  //     final birthdayStr = User.getUserInfo('birthday');
+  //     final birthday = DateTime.tryParse(birthdayStr);
+  //     if (birthday == null) return false;
+
+  //     final today = DateTime.now();
+  //     return today.month == birthday.month && today.day == birthday.day;
+  //   } catch (e) {
+  //     return false;
+  //   }
+  // }
+
   Future<bool> _checkBirthday() async {
-    try {
-      if (!User.isKeyAvalible('birthday')) return false;
-
-      final birthdayStr = User.getUserInfo('birthday');
-      final birthday = DateTime.tryParse(birthdayStr);
-      if (birthday == null) return false;
-
-      final today = DateTime.now();
-      return today.month == birthday.month && today.day == birthday.day;
-    } catch (e) {
-      return false;
+  try {
+    // Get fresh data from server to ensure accuracy
+    if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
+      return false; // No user data, can't validate birthday
     }
+
+    final clientInfo = await Api.getClient(
+      User.getUserInfo('phone'),
+      User.getUserInfo('password'),
+    );
+
+    if (clientInfo['res'] != true) return false;
+
+    final birthdayStr = clientInfo['birthday'];
+    if (birthdayStr == null || birthdayStr.isEmpty) return false;
+
+    final birthday = DateTime.tryParse(birthdayStr);
+    if (birthday == null) return false;
+
+    final today = DateTime.now();
+    
+    // Match JSX logic exactly: compare month and day
+    return today.month == birthday.month && today.day == birthday.day;
+  } catch (e) {
+    print('Error checking birthday: $e');
+    return false; // Default to not allowing birthday promocode on error
   }
+}
 
   Future<bool> _checkFirstOrder() async {
+  try {
+    // Get fresh data from server like PromocodeDialog does
+    if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
+      return true; // If no user data, consider as first order
+    }
+
+    final clientInfo = await Api.getClient(
+      User.getUserInfo('phone'),
+      User.getUserInfo('password'),
+    );
+
+    if (clientInfo['res'] != true) return true;
+
+    final comment = clientInfo['comment'];
+    
+    // Match JSX logic: if comment is null, it's first order
+    if (comment == null) return true;
+
+    Map<String, dynamic> commentData;
     try {
-      if (!User.isKeyAvalible('comment')) return true;
-
-      final comment = User.getUserInfo('comment');
-      if (comment == null || comment.isEmpty) return true;
-
-      Map<String, dynamic> commentData;
-      try {
+      if (comment is String) {
         commentData = jsonDecode(comment);
-      } catch (e) {
-        return true;
+      } else {
+        commentData = comment;
       }
-
-      final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
-      return orderLength == 0;
     } catch (e) {
+      // If can't parse comment, consider as first order
       return true;
     }
+
+    // Match JSX logic: check for both null/missing length AND zero length
+    final lengthValue = commentData['length'];
+    if (lengthValue == null) return true; // No length property = first order
+    
+    final orderLength = int.tryParse(lengthValue.toString()) ?? 0;
+    return orderLength == 0; // Zero length = first order
+  } catch (e) {
+    print('Error checking first order: $e');
+    return true; // Default to allowing first order promocode on error
   }
+}
+
+  // Future<bool> _checkFirstOrder() async {
+  //   try {
+  //     if (!User.isKeyAvalible('comment')) return true;
+
+  //     final comment = User.getUserInfo('comment');
+  //     if (comment == null || comment.isEmpty) return true;
+
+  //     Map<String, dynamic> commentData;
+  //     try {
+  //       commentData = jsonDecode(comment);
+  //     } catch (e) {
+  //       return true;
+  //     }
+
+  //     final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
+  //     return orderLength == 0;
+  //   } catch (e) {
+  //     return true;
+  //   }
+  // }
 
   void validatePromocodeOnCartChange() {
     if (activePromocode.value != null && !isProcessing.value) {

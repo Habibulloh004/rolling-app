@@ -276,6 +276,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
         // });
         break;
 
+        // Replace the case 3 section in applyPromocode method in PromocodeDialog.dart
       case 3: // Percentage discount
         final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
 
@@ -302,29 +303,76 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           }
         }
 
+        // Apply the discount
         promocodeStore.setDiscountPromocode(discountPercent);
         promocodeStore.setPromocode(promocode);
         setState(() {
           promotionDiscount = discountPercent;
         });
         break;
+
+      // case 3: // Percentage discount
+      //   final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
+
+      //   // Check for special promocodes
+      //   final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
+
+      //   if (promocodeName == 'bday20') {
+      //     final isValidBirthday = await checkBirthday();
+      //     if (!isValidBirthday) {
+      //       setState(() {
+      //         errorMessage = 'Промокод действителен только в день рождения';
+      //       });
+      //       return;
+      //     }
+      //   }
+
+      //   if (promocodeName == 'first20') {
+      //     final isFirstOrder = await checkFirstOrder();
+      //     if (!isFirstOrder) {
+      //       setState(() {
+      //         errorMessage = 'Промокод действителен только для первого заказа';
+      //       });
+      //       return;
+      //     }
+      //   }
+
+      //   promocodeStore.setDiscountPromocode(discountPercent);
+      //   promocodeStore.setPromocode(promocode);
+      //   setState(() {
+      //     promotionDiscount = discountPercent;
+      //   });
+      //   break;
     }
   }
 
+  // Replace the existing checkBirthday() method in PromocodeDialog.dart
   Future<bool> checkBirthday() async {
     try {
-      if (!User.isKeyAvalible('birthday')) return false;
+      final clientInfo = await Api.getClient(
+        User.getUserInfo('phone'),
+        User.getUserInfo('password'),
+      );
 
-      final birthday = DateTime.tryParse(User.getUserInfo('birthday'));
+      if (clientInfo['res'] != true) return false;
+
+      final birthdayStr = clientInfo['birthday'];
+      if (birthdayStr == null || birthdayStr.isEmpty) return false;
+
+      final birthday = DateTime.tryParse(birthdayStr);
       if (birthday == null) return false;
 
       final today = DateTime.now();
+      
+      // Match JSX logic exactly: compare month and day
       return today.month == birthday.month && today.day == birthday.day;
     } catch (e) {
+      print('Error validating birthday: $e');
       return false;
     }
   }
 
+  // Replace the existing checkFirstOrder() method in PromocodeDialog.dart
   Future<bool> checkFirstOrder() async {
     try {
       final clientInfo = await Api.getClient(
@@ -335,21 +383,73 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
       if (clientInfo['res'] != true) return false;
 
       final comment = clientInfo['comment'];
+      
+      // Match JSX logic: if comment is null, it's first order
       if (comment == null) return true;
 
       Map<String, dynamic> commentData;
-      if (comment is String) {
-        commentData = jsonDecode(comment);
-      } else {
-        commentData = comment;
+      try {
+        if (comment is String) {
+          commentData = jsonDecode(comment);
+        } else {
+          commentData = comment;
+        }
+      } catch (e) {
+        // If can't parse comment, consider as first order
+        return true;
       }
 
-      final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
-      return orderLength == 0;
+      // Match JSX logic: check for both null/missing length AND zero length
+      final lengthValue = commentData['length'];
+      if (lengthValue == null) return true; // No length property = first order
+      
+      final orderLength = int.tryParse(lengthValue.toString()) ?? 0;
+      return orderLength == 0; // Zero length = first order
     } catch (e) {
-      return false;
+      print('Error checking first order: $e');
+      return true; // Default to allowing first order promocode on error
     }
   }
+
+  // Future<bool> checkBirthday() async {
+  //   try {
+  //     if (!User.isKeyAvalible('birthday')) return false;
+
+  //     final birthday = DateTime.tryParse(User.getUserInfo('birthday'));
+  //     if (birthday == null) return false;
+
+  //     final today = DateTime.now();
+  //     return today.month == birthday.month && today.day == birthday.day;
+  //   } catch (e) {
+  //     return false;
+  //   }
+  // }
+
+  // Future<bool> checkFirstOrder() async {
+  //   try {
+  //     final clientInfo = await Api.getClient(
+  //       User.getUserInfo('phone'),
+  //       User.getUserInfo('password'),
+  //     );
+
+  //     if (clientInfo['res'] != true) return false;
+
+  //     final comment = clientInfo['comment'];
+  //     if (comment == null) return true;
+
+  //     Map<String, dynamic> commentData;
+  //     if (comment is String) {
+  //       commentData = jsonDecode(comment);
+  //     } else {
+  //       commentData = comment;
+  //     }
+
+  //     final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
+  //     return orderLength == 0;
+  //   } catch (e) {
+  //     return false;
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

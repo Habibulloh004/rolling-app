@@ -33,6 +33,9 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     CreditCard.clearUserChoseCard();
     Size size = MediaQuery.of(context).size;
+    
+    // Get the bottom safe area padding
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     @override
     void initState() {
@@ -121,48 +124,54 @@ class _MenuScreenState extends State<MenuScreen> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               panelBuilder: (controller) => PanelWidget(controller: controller),
             ),
+            // Fixed bottom buttons with SafeArea
             Positioned(
               bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
-                width: size.width,
-                padding: EdgeInsets.fromLTRB(21.w, 2.h, 21.w, 20.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Get.to(() => HistoryScreen());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+                child: SafeArea(
+                  top: false, // Don't apply top safe area since it's at the bottom
+                  child: Container(
+                    width: size.width,
+                    padding: EdgeInsets.fromLTRB(21.w, 2.h, 21.w, 20.h),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.to(() => HistoryScreen());
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 45.w, vertical: 8.h),
+                            backgroundColor: cDarkGreen,
+                            foregroundColor: cWhite,
+                          ),
+                          child: Text(LocaleData.orders.getString(context)),
                         ),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 45.w, vertical: 8.h),
-                        backgroundColor: cDarkGreen,
-                        foregroundColor: cWhite,
-                      ),
-                      child: Text(LocaleData.orders.getString(context)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Get.to(() => BasketScreen());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.to(() => BasketScreen());
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 45.w, vertical: 8.h),
+                            backgroundColor: cDarkGreen,
+                            foregroundColor: cWhite,
+                          ),
+                          child: Text(LocaleData.basket.getString(context)),
                         ),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 45.w, vertical: 8.h),
-                        backgroundColor: cDarkGreen,
-                        foregroundColor: cWhite,
-                      ),
-                      child: Text(LocaleData.basket.getString(context)),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             )
