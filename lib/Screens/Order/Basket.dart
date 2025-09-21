@@ -219,48 +219,6 @@ class _BasketScreenState extends State<BasketScreen> {
                     }),
                   ],
                 );
-
-
-                // return Column(
-                //   children: [
-                //     Expanded(
-                //         flex: 3,
-                //         child: SingleChildScrollView(
-                //           child: Column(
-                //             children: basketInfo(),
-                //           ),
-                //         )),
-                //     Expanded(
-                //       flex: 2,
-                //       child: Container(
-                //         decoration: BoxDecoration(
-                //           color: cDarkGreen,
-                //           borderRadius: BorderRadius.only(
-                //             topLeft: Radius.circular(30.0),
-                //             topRight: Radius.circular(30.0),
-                //           ),
-                //         ),
-                //         child: Container(
-                //           padding: EdgeInsets.symmetric(horizontal: 30.w),
-                //           child: Column(
-                //             crossAxisAlignment: CrossAxisAlignment.stretch,
-                //             children: [
-                //               SizedBox(height: 25.h),
-                //               _buildPriceBreakdown(context, deliveryPriceInt, deliveryPriceStr),
-                //               SizedBox(height: 24.h),
-                //               _buildPromocodeButton(context),
-                //               SizedBox(height: 12.h),
-                //               _buildBonusButton(context),
-                //               Spacer(),
-                //               _buildConfirmButton(context),
-                //               Spacer(),
-                //             ],
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // );
               }
             } else {
               return Text('No data available');
@@ -321,7 +279,7 @@ class _BasketScreenState extends State<BasketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Промокод',
+                Text('${LocaleData.promocode.getString(context)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: cWhite,
@@ -343,14 +301,14 @@ class _BasketScreenState extends State<BasketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Промокод',
+                Text('${LocaleData.promocode.getString(context)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: cWhite,
                       fontWeight: FontWeight.w400,
                     )),
                 Text(
-                    "${promocodeDiscount.toStringAsFixed(0)}% скидка",
+                    "${promocodeDiscount.toStringAsFixed(0)}% ${LocaleData.discount.getString(context)}",
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.green.shade200,
@@ -475,8 +433,8 @@ class _BasketScreenState extends State<BasketScreen> {
               SizedBox(width: 8),
               Text(
                 hasActivePromo
-                    ? 'Промокод активен'
-                    : 'Применить промокод',
+                    ? LocaleData.promocodeActive.getString(context)
+                    : LocaleData.applyPromocode.getString(context),
                 style: TextStyle(fontSize: 14.sp),
               ),
             ],
@@ -556,6 +514,9 @@ class _BasketScreenState extends State<BasketScreen> {
     }
   }
 
+  // This is the key section that needs to be updated in BasketBonus.dart
+// Replace the basketInfo() method to use proper translations:
+
   List<Widget> basketInfo() {
     List<Widget> result = [];
 
@@ -592,9 +553,7 @@ class _BasketScreenState extends State<BasketScreen> {
                       width: 90.w,
                       height: 90.h,
                       child: InstaImageViewer(
-                        child: cImage(
-                          name: orderItem['photo'] ?? '',
-                        ),
+                        child: cImage(name: orderItem['photo'] ?? ''),
                       ),
                     ),
                     if (isPromoItem)
@@ -617,7 +576,9 @@ class _BasketScreenState extends State<BasketScreen> {
                   ],
                 ),
               ),
-              SizedBox(width: 20.w),
+              SizedBox(
+                width: 20.w,
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,7 +587,7 @@ class _BasketScreenState extends State<BasketScreen> {
                       children: [
                         Text(
                           isPromoItem
-                              ? "Бесплатно"
+                              ? LocaleData.free.getString(context)
                               : "${orderItem['price'] ?? '0'} ${LocaleData.som.getString(context)}",
                           style: TextStyle(
                             fontSize: 17.sp,
@@ -646,7 +607,7 @@ class _BasketScreenState extends State<BasketScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'Бонус',
+                              LocaleData.bonus.getString(context),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: Colors.green.shade700,
@@ -672,15 +633,18 @@ class _BasketScreenState extends State<BasketScreen> {
                           color: cDarkGreen,
                           fontWeight: FontWeight.w400,
                         )),
-                    SizedBox(height: 5.h),
+                    SizedBox(
+                      height: 5.h,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (!isPromoItem) // Only show controls for non-promo items
+                        if (!isPromoItem) // Only show quantity controls for non-promo items
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Colors.grey.shade300),
+                              color: Colors.white, // Background color of the container
+                              border: Border.all(
+                                  color: Colors.grey.shade300), // Border color
                               borderRadius: BorderRadius.circular(8.0),
                               boxShadow: [
                                 BoxShadow(
@@ -689,38 +653,38 @@ class _BasketScreenState extends State<BasketScreen> {
                                   blurRadius: 10,
                                   offset: Offset(0, 5),
                                 ),
-                              ],
+                              ], // Corner radius
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 2, vertical: 2),
                                   child: Container(
                                     width: 24.w,
                                     height: 20.h,
                                     child: IconButton(
-                                      icon: Icon(Icons.remove, size: 14),
-                                      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                      icon: Icon(Icons.remove,
+                                          size: 14), // Smaller icon
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 2,
+                                          vertical: 2), // Reduced padding
                                       onPressed: () {
                                         setState(() {
-                                          int amount = int.parse(orderItem['amount'] ?? '1');
+                                          int amount = int.parse(
+                                              orderItem['amount'] ?? '1');
                                           amount -= 1;
 
                                           if (amount >= 1) {
-                                            orderItem['amount'] = '$amount';
-                                            // Validate promocode when quantity changes
-                                            promocodeStore.validatePromocodeOnCartChange();
-                                          } else if (Order.getOrderLength() == 1 && amount == 0) {
+                                            orderItem['amount'] = '${amount}';
+                                          } else if (Order.getOrderLength() == 1 &&
+                                              amount == 0) {
                                             Order.deleteOrderAt(index);
-                                            promocodeStore.handleRemovePromo();
                                             Get.offAll(() => MenuScreen());
                                           } else {
                                             Order.deleteOrderAt(index);
-                                            // Validate promocode after deletion
-                                            promocodeStore.validatePromocodeOnCartChange();
                                           }
-                                          _updatePrices();
                                         });
                                       },
                                     ),
@@ -732,7 +696,7 @@ class _BasketScreenState extends State<BasketScreen> {
                                     width: 22.w,
                                     height: 20.h,
                                     child: Text(
-                                      orderItem['amount'] ?? '1',
+                                      orderItem['amount'] ?? '1', // The current quantity
                                       style: TextStyle(fontSize: 14),
                                     ),
                                   ),
@@ -742,19 +706,20 @@ class _BasketScreenState extends State<BasketScreen> {
                                     width: 24.w,
                                     height: 20.h,
                                     child: IconButton(
-                                      icon: Icon(Icons.add, size: 14),
-                                      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                                      constraints: BoxConstraints(),
+                                      icon: Icon(Icons.add, size: 14), // Smaller icon
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 2,
+                                          vertical: 2), // Reduced padding
+                                      constraints:
+                                      BoxConstraints(), // Removes size constraints
                                       onPressed: () {
                                         setState(() {
-                                          int amount = int.parse(orderItem['amount'] ?? '1');
+                                          int amount = int.parse(
+                                              orderItem['amount'] ?? '1');
                                           amount += 1;
                                           if (amount <= 10) {
-                                            orderItem['amount'] = '$amount';
-                                            // Validate promocode when quantity increases
-                                            promocodeStore.validatePromocodeOnCartChange();
+                                            orderItem['amount'] = '${amount}';
                                           }
-                                          _updatePrices();
                                         });
                                       },
                                     ),
@@ -765,13 +730,16 @@ class _BasketScreenState extends State<BasketScreen> {
                           ),
                         if (isPromoItem)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.shade50,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Подарок',
+                              LocaleData.gift.getString(context),
                               style: TextStyle(
                                 color: Colors.green.shade700,
                                 fontSize: 12,
@@ -779,42 +747,29 @@ class _BasketScreenState extends State<BasketScreen> {
                               ),
                             ),
                           ),
-                        // Updated delete button logic to match JSX
                         GestureDetector(
                           onTap: () {
                             setState(() {
                               if (isPromoItem) {
-                                // SCENARIO 1: Bonus product deleted from basket
-                                // → Remove promocode and ALL bonus products
-                                // → Keep all regular products intact
-                                print('Deleting bonus product - will remove promocode and all bonus products');
-                                promocodeStore.handleRemovePromo();
-                              } else {
-                                // SCENARIO 2: Regular product deletion
-                                // → Delete only this specific product
-                                // → Validate if promocode conditions still met
-                                print('Deleting regular product at index $index');
+                                // If deleting a bonus product, you might want to handle
+                                // promocode removal here if you have promocode logic
+                                // For now, just delete the item
                                 Order.deleteOrderAt(index);
-
-                                // Validate promocode conditions after regular product deletion
-                                promocodeStore.validatePromocodeOnCartChange();
+                              } else {
+                                // Regular product deletion
+                                Order.deleteOrderAt(index);
                               }
 
-                              // Check if cart becomes empty after any deletion
                               if (Order.getOrderLength() == 0) {
-                                print('Cart is empty - clearing all promocode state');
-                                promocodeStore.handleRemovePromo();
                                 Get.offAll(() => MenuScreen());
-                                return;
                               }
-
-                              _updatePrices();
                             });
                           },
                           child: Container(
-                            padding: EdgeInsets.all(4),
+                            padding: EdgeInsets.all(
+                                4), // Padding to shrink the size of the container
                             decoration: BoxDecoration(
-                              color: cWhite,
+                              color: cWhite, // Background color of the container
                               borderRadius: BorderRadius.circular(8.0),
                               border: Border.all(color: Colors.grey.shade300),
                               boxShadow: [
@@ -824,7 +779,7 @@ class _BasketScreenState extends State<BasketScreen> {
                                   blurRadius: 10,
                                   offset: Offset(0, 5),
                                 ),
-                              ],
+                              ], // Corner radius
                             ),
                             child: Icon(
                               Icons.delete,

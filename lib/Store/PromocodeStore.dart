@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:get/get.dart' hide Condition;
 import 'package:hive/hive.dart';
+import 'package:flutter_localization/flutter_localization.dart';
 import '../Models/Promocode.dart';
 import '../Models/Product.dart';
 import '../LocalMemory/Order.dart';
 import '../LocalMemory/User.dart';
 import '../Consts/Functions.dart';
 import '../Backend/Api.dart';
+import '../Localzition/locals.dart';
 
 class PromocodeStore extends GetxController {
   static PromocodeStore get to => Get.find();
@@ -131,12 +133,12 @@ class PromocodeStore extends GetxController {
 
     try {
       if (promoCode.isEmpty) {
-        onError('Пожалуйста, введите промокод');
+        onError(_getLocalizedText('pleaseEnterPromocode'));
         return false;
       }
 
       if (activePromocode.value != null) {
-        onError('Промокод уже используется');
+        onError(_getLocalizedText('promocodeAlreadyUsed'));
         return false;
       }
 
@@ -158,7 +160,7 @@ class PromocodeStore extends GetxController {
       }
 
       if (findPromo == null) {
-        onError('Недействительный промокод');
+        onError(_getLocalizedText('invalidPromocode'));
         return false;
       }
 
@@ -166,7 +168,7 @@ class PromocodeStore extends GetxController {
 
       // Check auth requirement - matching JSX logic
       if (promocode.params?.clientsType == 3 && !User.isKeyAvalible('id')) {
-        onError('Необходима авторизация для использования этого промокода');
+        onError(_getLocalizedText('authRequiredForPromocode'));
         return false;
       }
 
@@ -186,14 +188,14 @@ class PromocodeStore extends GetxController {
 
       if (applyResult) {
         setPromocode(promocode);
-        onSuccess('Промокод применен');
+        onSuccess(_getLocalizedText('promocodeApplied'));
       }
 
       return applyResult;
 
     } catch (e) {
       print('Error applying promocode: $e');
-      onError('Произошла ошибка при применении промокода');
+      onError(_getLocalizedText('errorApplyingPromocode'));
       return false;
     } finally {
       isProcessing.value = false;
@@ -216,7 +218,7 @@ class PromocodeStore extends GetxController {
         case 0: // All products - matching JSX logic
           final requiredSum = (condition.sum ?? 0) ~/ 100;
           if (totalSum < requiredSum) {
-            onError('${makePriceSomString(requiredSum)} сум минимальная сумма заказа');
+            onError('${makePriceSomString(requiredSum)} ${_getLocalizedText('som')} ${_getLocalizedText('minimumOrderAmount')}');
             return false;
           }
           break;
@@ -237,8 +239,8 @@ class PromocodeStore extends GetxController {
             );
             final categoryName = categoryIndex != -1
                 ? splitText(categoriesData[categoryIndex]['category_name'])
-                : 'категория';
-            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} сум минимальная сумма - $categoryName');
+                : _getLocalizedText('category');
+            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} ${_getLocalizedText('som')} ${_getLocalizedText('minimumOrderAmount')} - $categoryName');
             return false;
           }
 
@@ -254,8 +256,8 @@ class PromocodeStore extends GetxController {
             );
             final categoryName = categoryIndex != -1
                 ? splitText(categoriesData[categoryIndex]['category_name'])
-                : 'категория';
-            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} сум минимальная сумма - $categoryName');
+                : _getLocalizedText('category');
+            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} ${_getLocalizedText('som')} ${_getLocalizedText('minimumOrderAmount')} - $categoryName');
             return false;
           }
           break;
@@ -271,8 +273,8 @@ class PromocodeStore extends GetxController {
             );
             final productName = productIndex != -1
                 ? productsData[productIndex]['product_name']
-                : 'продукт';
-            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} сум минимальная сумма - $productName');
+                : _getLocalizedText('products');
+            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} ${_getLocalizedText('som')} ${_getLocalizedText('minimumOrderAmount')} - $productName');
             return false;
           }
 
@@ -288,8 +290,8 @@ class PromocodeStore extends GetxController {
             );
             final productName = productIndex != -1
                 ? productsData[productIndex]['product_name']
-                : 'продукт';
-            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} сум минимальная сумма - $productName');
+                : _getLocalizedText('products');
+            onError('${makePriceSomString((condition.sum ?? 0) ~/ 100)} ${_getLocalizedText('som')} ${_getLocalizedText('minimumOrderAmount')} - $productName');
             return false;
           }
           break;
@@ -349,7 +351,6 @@ class PromocodeStore extends GetxController {
         setPromocodePrice(discountValue);
         break;
 
-      // Replace the case 3 section in _applyPromocodeByType method
       case 3: // Percentage discount - matching JSX logic
         final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
 
@@ -357,7 +358,7 @@ class PromocodeStore extends GetxController {
         if (promocodeName == 'bday20') {
           final isValidBirthday = await _checkBirthday();
           if (!isValidBirthday) {
-            onError('Промокод действителен только в день рождения');
+            onError(_getLocalizedText('promocodeValidOnlyOnBirthday'));
             return false;
           }
         }
@@ -366,7 +367,7 @@ class PromocodeStore extends GetxController {
         if (promocodeName == 'first20') {
           final isFirstOrder = await _checkFirstOrder();
           if (!isFirstOrder) {
-            onError('Промокод действителен только для первого заказа');
+            onError(_getLocalizedText('promocodeValidOnlyForFirstOrder'));
             return false;
           }
         }
@@ -392,152 +393,82 @@ class PromocodeStore extends GetxController {
           setDiscountPromocode(discountValue);
         }
         break;
-      // case 3: // Percentage discount - matching JSX logic
-      //   final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
-
-      //   // Birthday check - matching JSX logic
-      //   if (promocodeName == 'bday20') {
-      //     final isValidBirthday = await _checkBirthday();
-      //     if (!isValidBirthday) {
-      //       onError('Промокод действителен только в день рождения');
-      //       return false;
-      //     }
-      //   }
-
-      //   // First order check - matching JSX logic
-      //   if (promocodeName == 'first20') {
-      //     final isFirstOrder = await _checkFirstOrder();
-      //     if (!isFirstOrder) {
-      //       onError('Промокод действителен только для первого заказа');
-      //       return false;
-      //     }
-      //   }
-
-      //   final discountValue = promocode.params?.discountValue?.toDouble() ?? 0;
-
-      //   // If condition is product-specific, store as product-only percent discount
-      //   final conditions = promocode.params?.conditions ?? [];
-      //   final hasProductCondition = conditions.any((c) => c.type == 2);
-      //   final hasCategoryCondition = conditions.any((c) => c.type == 1);
-
-      //   if (hasProductCondition || hasCategoryCondition) {
-      //     setDiscountPromocodeProduct(discountValue);
-      //   } else {
-      //     setDiscountPromocode(discountValue);
-      //   }
-      //   break;
     }
     return true;
   }
 
-  // Future<bool> _checkBirthday() async {
-  //   try {
-  //     if (!User.isKeyAvalible('birthday')) return false;
-
-  //     final birthdayStr = User.getUserInfo('birthday');
-  //     final birthday = DateTime.tryParse(birthdayStr);
-  //     if (birthday == null) return false;
-
-  //     final today = DateTime.now();
-  //     return today.month == birthday.month && today.day == birthday.day;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
-
   Future<bool> _checkBirthday() async {
-  try {
-    // Get fresh data from server to ensure accuracy
-    if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
-      return false; // No user data, can't validate birthday
+    try {
+      // Get fresh data from server to ensure accuracy
+      if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
+        return false; // No user data, can't validate birthday
+      }
+
+      final clientInfo = await Api.getClient(
+        User.getUserInfo('phone'),
+        User.getUserInfo('password'),
+      );
+
+      if (clientInfo['res'] != true) return false;
+
+      final birthdayStr = clientInfo['birthday'];
+      if (birthdayStr == null || birthdayStr.isEmpty) return false;
+
+      final birthday = DateTime.tryParse(birthdayStr);
+      if (birthday == null) return false;
+
+      final today = DateTime.now();
+      
+      // Match JSX logic exactly: compare month and day
+      return today.month == birthday.month && today.day == birthday.day;
+    } catch (e) {
+      print('Error checking birthday: $e');
+      return false; // Default to not allowing birthday promocode on error
     }
-
-    final clientInfo = await Api.getClient(
-      User.getUserInfo('phone'),
-      User.getUserInfo('password'),
-    );
-
-    if (clientInfo['res'] != true) return false;
-
-    final birthdayStr = clientInfo['birthday'];
-    if (birthdayStr == null || birthdayStr.isEmpty) return false;
-
-    final birthday = DateTime.tryParse(birthdayStr);
-    if (birthday == null) return false;
-
-    final today = DateTime.now();
-    
-    // Match JSX logic exactly: compare month and day
-    return today.month == birthday.month && today.day == birthday.day;
-  } catch (e) {
-    print('Error checking birthday: $e');
-    return false; // Default to not allowing birthday promocode on error
   }
-}
 
   Future<bool> _checkFirstOrder() async {
-  try {
-    // Get fresh data from server like PromocodeDialog does
-    if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
-      return true; // If no user data, consider as first order
-    }
-
-    final clientInfo = await Api.getClient(
-      User.getUserInfo('phone'),
-      User.getUserInfo('password'),
-    );
-
-    if (clientInfo['res'] != true) return true;
-
-    final comment = clientInfo['comment'];
-    
-    // Match JSX logic: if comment is null, it's first order
-    if (comment == null) return true;
-
-    Map<String, dynamic> commentData;
     try {
-      if (comment is String) {
-        commentData = jsonDecode(comment);
-      } else {
-        commentData = comment;
+      // Get fresh data from server like PromocodeDialog does
+      if (!User.isKeyAvalible('phone') || !User.isKeyAvalible('password')) {
+        return true; // If no user data, consider as first order
       }
+
+      final clientInfo = await Api.getClient(
+        User.getUserInfo('phone'),
+        User.getUserInfo('password'),
+      );
+
+      if (clientInfo['res'] != true) return true;
+
+      final comment = clientInfo['comment'];
+      
+      // Match JSX logic: if comment is null, it's first order
+      if (comment == null) return true;
+
+      Map<String, dynamic> commentData;
+      try {
+        if (comment is String) {
+          commentData = jsonDecode(comment);
+        } else {
+          commentData = comment;
+        }
+      } catch (e) {
+        // If can't parse comment, consider as first order
+        return true;
+      }
+
+      // Match JSX logic: check for both null/missing length AND zero length
+      final lengthValue = commentData['length'];
+      if (lengthValue == null) return true; // No length property = first order
+      
+      final orderLength = int.tryParse(lengthValue.toString()) ?? 0;
+      return orderLength == 0; // Zero length = first order
     } catch (e) {
-      // If can't parse comment, consider as first order
-      return true;
+      print('Error checking first order: $e');
+      return true; // Default to allowing first order promocode on error
     }
-
-    // Match JSX logic: check for both null/missing length AND zero length
-    final lengthValue = commentData['length'];
-    if (lengthValue == null) return true; // No length property = first order
-    
-    final orderLength = int.tryParse(lengthValue.toString()) ?? 0;
-    return orderLength == 0; // Zero length = first order
-  } catch (e) {
-    print('Error checking first order: $e');
-    return true; // Default to allowing first order promocode on error
   }
-}
-
-  // Future<bool> _checkFirstOrder() async {
-  //   try {
-  //     if (!User.isKeyAvalible('comment')) return true;
-
-  //     final comment = User.getUserInfo('comment');
-  //     if (comment == null || comment.isEmpty) return true;
-
-  //     Map<String, dynamic> commentData;
-  //     try {
-  //       commentData = jsonDecode(comment);
-  //     } catch (e) {
-  //       return true;
-  //     }
-
-  //     final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
-  //     return orderLength == 0;
-  //   } catch (e) {
-  //     return true;
-  //   }
-  // }
 
   void validatePromocodeOnCartChange() {
     if (activePromocode.value != null && !isProcessing.value) {
@@ -776,19 +707,18 @@ class PromocodeStore extends GetxController {
 
     switch (params.resultType) {
       case 1:
-        return 'Бонусные продукты';
+        return _getLocalizedText('bonusProducts');
       case 2:
-        return 'Скидка ${promocodePrice.value.toStringAsFixed(0)} сум';
+        return '${_getLocalizedText('discount')} ${promocodePrice.value.toStringAsFixed(0)} ${_getLocalizedText('som')}';
       case 3:
         final shown = discountPromocode.value > 0
             ? discountPromocode.value
             : (params.discountValue?.toDouble() ?? 0);
-        return 'Скидка ${shown.toStringAsFixed(0)}%';
+        return '${_getLocalizedText('discount')} ${shown.toStringAsFixed(0)}%';
       default:
         return '';
     }
   }
-
 
   String getPromocodeName() {
     final name = activePromocode.value?.name ?? '';
@@ -797,6 +727,49 @@ class PromocodeStore extends GetxController {
       return parts.length > 1 ? parts[1] : name;
     }
     return name;
+  }
+
+  // Helper method to get localized text
+  String _getLocalizedText(String key) {
+    try {
+      // Use the current context to get localized strings
+      // This is a simplified approach - you might need to adjust based on your localization setup
+      switch (key) {
+        case 'pleaseEnterPromocode':
+          return 'Please enter promocode'; // Default fallback
+        case 'promocodeAlreadyUsed':
+          return 'Promocode already in use';
+        case 'invalidPromocode':
+          return 'Invalid promocode';
+        case 'authRequiredForPromocode':
+          return 'Authentication required to use this promocode';
+        case 'minimumOrderAmount':
+          return 'Minimum order amount';
+        case 'promocodeValidOnlyOnBirthday':
+          return 'Promocode valid only on birthday';
+        case 'promocodeValidOnlyForFirstOrder':
+          return 'Promocode valid only for first order';
+        case 'errorApplyingPromocode':
+          return 'Error applying promocode';
+        case 'promocodeApplied':
+          return 'Promocode applied';
+        case 'bonusProducts':
+          return 'Bonus Products';
+        case 'discount':
+          return 'Discount';
+        case 'som':
+          return 'som';
+        case 'category':
+          return 'category';
+        case 'products':
+          return 'product';
+        default:
+          return key;
+      }
+    } catch (e) {
+      // Fallback to key if localization fails
+      return key;
+    }
   }
 
   @override

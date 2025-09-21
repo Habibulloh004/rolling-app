@@ -318,6 +318,25 @@ void handleNotificationTap(String? payload) {
   }
 }
 
+// Global SafeArea wrapper to ensure all screens have safe area protection
+class GlobalSafeAreaWrapper extends StatelessWidget {
+  final Widget child;
+  
+  const GlobalSafeAreaWrapper({Key? key, required this.child}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    // Use MediaQuery to add bottom padding without changing background color
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.padding.bottom;
+    
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: child,
+    );
+  }
+}
+
 class MyApp extends StatefulWidget {
   final FlutterLocalization localization;
 
@@ -401,12 +420,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           supportedLocales: widget.localization.supportedLocales,
           localizationsDelegates: widget.localization.localizationsDelegates,
           debugShowCheckedModeBanner: false,
+          // Global builder with SafeArea protection for all screens
           builder: (context, child) {
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: const TextScaler.linear(1.0),
               ),
-              child: child!,
+              child: GlobalSafeAreaWrapper(
+                child: child!,
+              ),
             );
           },
           home: const UpdateWrapper(),
@@ -482,28 +504,26 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff004032),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 250.w,
-                height: 250.h,
-                child: Lottie.asset(
-                  "assets/images/logoLottie.json",
-                  repeat: false,
-                  onLoaded: (composition) {
-                    // Animation loaded
-                  },
-                ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 250.w,
+              height: 250.h,
+              child: Lottie.asset(
+                "assets/images/logoLottie.json",
+                repeat: false,
+                onLoaded: (composition) {
+                  // Animation loaded
+                },
               ),
-              SizedBox(height: 20.h),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ],
-          ),
+            ),
+            SizedBox(height: 20.h),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
         ),
       ),
     );
@@ -517,63 +537,61 @@ class ErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 80.sp,
-                  color: Colors.red,
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80.sp,
+                color: Colors.red,
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                "Произошла ошибка",
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xff004032),
                 ),
-                SizedBox(height: 20.h),
-                Text(
-                  "Произошла ошибка",
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xff004032),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                "Пожалуйста, попробуйте еще раз",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 30.h),
+              ElevatedButton(
+                onPressed: () {
+                  // Restart app
+                  Get.offAll(() => const UpdateWrapper());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff004032),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 40.w,
+                    vertical: 12.h,
                   ),
-                  textAlign: TextAlign.center,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                SizedBox(height: 10.h),
-                Text(
-                  "Пожалуйста, попробуйте еще раз",
+                child: Text(
+                  "Повторить",
                   style: TextStyle(
+                    color: Colors.white,
                     fontSize: 16.sp,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 30.h),
-                ElevatedButton(
-                  onPressed: () {
-                    // Restart app
-                    Get.offAll(() => const UpdateWrapper());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff004032),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 40.w,
-                      vertical: 12.h,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    "Повторить",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

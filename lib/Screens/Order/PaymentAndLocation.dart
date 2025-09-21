@@ -137,7 +137,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
   List<String> restaurantText = [
     'Rolling Sushi  "Olmazor"',
     'Rolling Sushi  "Yakkasaroy"',
-    'Rolling Sushi  "Mirzo-Ulug’bek"',
+    'Rolling Sushi  "Mirzo-Ulug\'bek"',
   ];
   int indexOfResturant = 0;
 
@@ -510,7 +510,12 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text("Filyalli tanlang",
+                                        Text(
+                                            Language.getLanguage() == 'en'
+                                                ? "Select branch"
+                                                : Language.getLanguage() == 'uz'
+                                                    ? "Filialni tanlang"
+                                                    : "Выберите филиал",
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -958,16 +963,12 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                             SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: () async {
-                                // //current date
                                 final promocodeData = _buildPromocodeData();
                                 getLatLong();
                                 DateTime now = DateTime.now();
                                 String formattedDateTime =
                                     DateFormat('dd.MM.yyyy HH:mm').format(now);
 
-                                // clicked += 1;
-
-                                // if (clicked < 2) {
                                 showDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -982,7 +983,6 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                 //Check if making order is possible,
                                 bool isAllowedToTakeOrder =
                                     await Api.isRestaurantOpen();
-                                // bool isAllowedToTakeOrder = true;
 
                                 if (!isAllowedToTakeOrder) {
                                   Navigator.pop(context);
@@ -995,7 +995,6 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                     colorText: Colors.white,
                                   );
                                 } else {
-                                  // Navigator.pop(context);
                                   if (MapLocation.isNoMaps()) {
                                     Navigator.pop(context);
                                     Get.snackbar(
@@ -1024,6 +1023,39 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                                 : orderPriceAfterPromoInt) *
                                             100;
 
+                                    // Build promo-aware comment similar to website
+                                    String commentSpot = "";
+                                    if (promocodeStore.hasActivePromocode()) {
+                                      final promoName = promocodeStore.getPromocodeName();
+                                      if (promoName.isNotEmpty) {
+                                        commentSpot += "\n${LocaleData.promocode.getString(context)}:${promoName}";
+                                      }
+                                      final promoSum = promocodeStore.promocodePrice.value;
+                                      if (promoSum > 0) {
+                                        commentSpot += "\n${LocaleData.promocode.getString(context)}Sum: ${promoSum.toInt()}";
+                                      }
+                                      final promoPercent = promocodeStore.discountPromocode.value > 0
+                                          ? promocodeStore.discountPromocode.value
+                                          : promocodeStore.discountPromocodeProduct.value;
+                                      if (promoPercent > 0) {
+                                        commentSpot += "\n${LocaleData.discount.getString(context)}: ${promoPercent.toInt()}%";
+                                      }
+                                    }
+                                    
+                                    // Add order type comment based on language
+                                    String orderTypeComment = "";
+                                    switch (Language.getLanguage()) {
+                                      case 'en':
+                                        orderTypeComment = "\nOrder type: Mobile app";
+                                        break;
+                                      case 'uz':
+                                        orderTypeComment = "\nBuyurtma turi: Mobil ilova orqali";
+                                        break;
+                                      default: // Russian
+                                        orderTypeComment = "\nТип заказа: Через мобильное приложение";
+                                    }
+                                    commentSpot += orderTypeComment;
+
                                     Map<String, dynamic> orderMapData = {
                                       'created_at': formattedDateTime,
                                       'type': typeOfOrder == "delivery"
@@ -1038,7 +1070,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                           User.getUserInfo('id').toString(),
                                       'phone':
                                           User.getUserInfo('phone').toString(),
-                                      'comment': "no",
+                                      'comment': commentSpot.isEmpty ? "no" : commentSpot,
                                       // all_price = original total without bonus discount
                                       // (backend can compute promocode discount from provided promocode data)
                                       'all_price': typeOfOrder == "delivery"
@@ -1058,7 +1090,6 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                       'fcm_lng': Language.getLanguage(),
                                       "address_comment":
                                           addressCommentController.text
-                                      //addressCommentController
                                     };
 
                                     int priceOfOrder = typeOfOrder == "delivery"
@@ -1085,6 +1116,11 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                               " " +
                                               restaurantText[indexOfResturant],
                                       'discount': false,
+                                      'hasPromocode': promocodeStore.hasActivePromocode(),
+                                      'promocodeDiscount': promocodeStore.getTotalDiscount(),
+                                      'promocodeAmount': promocodeStore.promocodePrice.value > 0 
+                                          ? makePriceSomString(promocodeStore.promocodePrice.value.toInt())
+                                          : null,
                                       'itogo': priceOfOrderString,
                                       'bonus': Bonus.isBonusExists()
                                           ? bonusStr +
@@ -1128,11 +1164,11 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                         }
                                       }
                                     } else {
-                                      //Cashe payment
-
+                                      //Cash payment
                                       String orderId =
                                           await Api.giveOrder(orderMapData);
                                       if (orderId == 'error') {
+                                        Navigator.pop(context);
                                         Get.snackbar(
                                           "${LocaleData.somethingwentwrong.getString(context)}", // title
                                           '', // message
@@ -1145,7 +1181,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                         // Up gerding the client group
                                         await userUpDateGroupe();
 
-                                        // //current date
+                                        // current date
                                         DateTime now = DateTime.now();
                                         String formattedDateTime =
                                             DateFormat('dd.MM.yyyy HH:mm')
@@ -1164,9 +1200,14 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                                   " " +
                                                   restaurantText[
                                                       indexOfResturant],
+                                          'hasPromocode': promocodeStore.hasActivePromocode(),
+                                          'promocodeDiscount': promocodeStore.getTotalDiscount(),
+                                          'promocodeAmount': promocodeStore.promocodePrice.value > 0 
+                                              ? makePriceSomString(promocodeStore.promocodePrice.value.toInt())
+                                              : null,
                                         };
 
-                                        //Add order to history Localy
+                                        //Add order to history Locally
                                         HistoryOrder.addHistoryOrder(data);
 
                                         Get.offAll(() => EndOFOrderScreen(),
@@ -1175,7 +1216,6 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                     }
                                   }
                                 }
-                                // }
                               },
                               style: ElevatedButton.styleFrom(
                                 foregroundColor: cBlack,
@@ -1209,14 +1249,10 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
   }
 
   List<Widget> locations() {
-    // List reversedLocationName =
-
     List<Widget> result = List.generate(
       locationsBoolList.length,
       (index) {
         print("--------");
-        // print(MapLocation.getLocationAt(index));
-        //locationsBoolList.length - cunnrent index
         print(MapLocation.getLocationAt(
             (locationsBoolList.length - 1) - index)['name']);
         String name = MapLocation.getLocationAt(

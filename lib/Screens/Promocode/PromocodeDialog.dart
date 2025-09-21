@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_localization/flutter_localization.dart';
 import 'package:get/get.dart';
 import 'package:sushi_alpha_project/Consts/Colors.dart';
 import '../../Backend/Api.dart';
@@ -8,6 +9,7 @@ import '../../LocalMemory/User.dart';
 import '../../Models/Promocode.dart';
 import '../../Store/PromocodeStore.dart';
 import '../../Consts/Functions.dart';
+import '../../Localzition/locals.dart';
 
 class PromocodeDialog extends StatefulWidget {
   final List<dynamic> promotions;
@@ -46,8 +48,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
 
     Get.back(result: 'removed');
     Get.snackbar(
-      'Успешно',
-      'Промокод удален',
+      LocaleData.success.getString(context),
+      LocaleData.promocodeRemoved.getString(context),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Colors.white,
@@ -59,14 +61,14 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
 
     if (promoCode.isEmpty) {
       setState(() {
-        errorMessage = 'Пожалуйста, введите промокод';
+        errorMessage = LocaleData.pleaseEnterPromocode.getString(context);
       });
       return;
     }
 
     if (promocodeStore.activePromocode.value != null) {
       setState(() {
-        errorMessage = 'Промокод уже используется';
+        errorMessage = LocaleData.promocodeAlreadyUsed.getString(context);
       });
       return;
     }
@@ -111,7 +113,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
 
       if (findPromo == null) {
         setState(() {
-          errorMessage = 'Недействительный промокод';
+          errorMessage = LocaleData.invalidPromocode.getString(context);
           isLoading = false;
         });
         return;
@@ -122,7 +124,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
       // Check if auth is required
       if (promocode.params?.clientsType == 3 && !User.isKeyAvalible('id')) {
         setState(() {
-          errorMessage = 'Необходима авторизация для использования этого промокода';
+          errorMessage = LocaleData.authRequiredForPromocode.getString(context);
           isLoading = false;
         });
         return;
@@ -147,8 +149,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
 
       Get.back(result: 'applied'); // Return result to refresh basket
       Get.snackbar(
-        'Успешно',
-        'Промокод применен',
+        LocaleData.success.getString(context),
+        LocaleData.promocodeApplied.getString(context),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
@@ -157,7 +159,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     } catch (e) {
       print('Error applying promocode: $e');
       setState(() {
-        errorMessage = 'Произошла ошибка при применении промокода';
+        errorMessage = LocaleData.errorApplyingPromocode.getString(context);
         isLoading = false;
       });
     }
@@ -173,7 +175,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           final requiredSum = (condition.sum ?? 0) ~/ 100; // Convert from kopecks to sums
           if (totalSum < requiredSum) {
             setState(() {
-              errorMessage = 'Минимальная сумма заказа: ${makePriceSomString(requiredSum)} сум';
+              errorMessage = '${LocaleData.minimumOrderAmount.getString(context)}: ${makePriceSomString(requiredSum)} ${LocaleData.som.getString(context)}';
             });
             return false;
           }
@@ -196,9 +198,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
             );
             final categoryName = category != null
                 ? splitText(category['category_name'])
-                : 'категории';
+                : LocaleData.category.getString(context).toLowerCase();
             setState(() {
-              errorMessage = 'Добавьте продукты из $categoryName';
+              errorMessage = '${LocaleData.addProductsFrom.getString(context)} $categoryName';
             });
             return false;
           }
@@ -213,9 +215,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
             );
             final productName = product != null
                 ? product['product_name']
-                : 'продукт';
+                : LocaleData.products.getString(context).toLowerCase();
             setState(() {
-              errorMessage = 'Добавьте $productName в корзину';
+              errorMessage = '${LocaleData.addProductToCart.getString(context)} $productName';
             });
             return false;
           }
@@ -227,8 +229,6 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
   }
 
   Future<void> applyPromocode(Promocode promocode) async {
-    // promocodeStore.setPromocode(promocode);
-
     switch (promocode.params?.resultType) {
       case 1: // Bonus products
         final bonusProductIds = promocode.params?.bonusProducts ?? [];
@@ -269,14 +269,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
         setState(() {
           promotionPrice = discount;
         });
-        // final discount = (promocode.params?.discountValue ?? 0).toDouble();
-        // promocodeStore.setPromocodePrice(discount);
-        // setState(() {
-        //   promotionPrice = discount;
-        // });
         break;
 
-        // Replace the case 3 section in applyPromocode method in PromocodeDialog.dart
       case 3: // Percentage discount
         final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
 
@@ -287,7 +281,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           final isValidBirthday = await checkBirthday();
           if (!isValidBirthday) {
             setState(() {
-              errorMessage = 'Промокод действителен только в день рождения';
+              errorMessage = LocaleData.promocodeValidOnlyOnBirthday.getString(context);
             });
             return;
           }
@@ -297,7 +291,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           final isFirstOrder = await checkFirstOrder();
           if (!isFirstOrder) {
             setState(() {
-              errorMessage = 'Промокод действителен только для первого заказа';
+              errorMessage = LocaleData.promocodeValidOnlyForFirstOrder.getString(context);
             });
             return;
           }
@@ -310,43 +304,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           promotionDiscount = discountPercent;
         });
         break;
-
-      // case 3: // Percentage discount
-      //   final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
-
-      //   // Check for special promocodes
-      //   final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
-
-      //   if (promocodeName == 'bday20') {
-      //     final isValidBirthday = await checkBirthday();
-      //     if (!isValidBirthday) {
-      //       setState(() {
-      //         errorMessage = 'Промокод действителен только в день рождения';
-      //       });
-      //       return;
-      //     }
-      //   }
-
-      //   if (promocodeName == 'first20') {
-      //     final isFirstOrder = await checkFirstOrder();
-      //     if (!isFirstOrder) {
-      //       setState(() {
-      //         errorMessage = 'Промокод действителен только для первого заказа';
-      //       });
-      //       return;
-      //     }
-      //   }
-
-      //   promocodeStore.setDiscountPromocode(discountPercent);
-      //   promocodeStore.setPromocode(promocode);
-      //   setState(() {
-      //     promotionDiscount = discountPercent;
-      //   });
-      //   break;
     }
   }
 
-  // Replace the existing checkBirthday() method in PromocodeDialog.dart
   Future<bool> checkBirthday() async {
     try {
       final clientInfo = await Api.getClient(
@@ -372,7 +332,6 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     }
   }
 
-  // Replace the existing checkFirstOrder() method in PromocodeDialog.dart
   Future<bool> checkFirstOrder() async {
     try {
       final clientInfo = await Api.getClient(
@@ -411,46 +370,6 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     }
   }
 
-  // Future<bool> checkBirthday() async {
-  //   try {
-  //     if (!User.isKeyAvalible('birthday')) return false;
-
-  //     final birthday = DateTime.tryParse(User.getUserInfo('birthday'));
-  //     if (birthday == null) return false;
-
-  //     final today = DateTime.now();
-  //     return today.month == birthday.month && today.day == birthday.day;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
-
-  // Future<bool> checkFirstOrder() async {
-  //   try {
-  //     final clientInfo = await Api.getClient(
-  //       User.getUserInfo('phone'),
-  //       User.getUserInfo('password'),
-  //     );
-
-  //     if (clientInfo['res'] != true) return false;
-
-  //     final comment = clientInfo['comment'];
-  //     if (comment == null) return true;
-
-  //     Map<String, dynamic> commentData;
-  //     if (comment is String) {
-  //       commentData = jsonDecode(comment);
-  //     } else {
-  //       commentData = comment;
-  //     }
-
-  //     final orderLength = int.tryParse(commentData['length']?.toString() ?? '0') ?? 0;
-  //     return orderLength == 0;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -466,7 +385,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              hasActivePromo ? 'Активный промокод' : 'Введите промокод',
+              hasActivePromo 
+                  ? LocaleData.activePromocode.getString(context) 
+                  : LocaleData.enterPromocode.getString(context),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -513,8 +434,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
               TextField(
                 controller: promoCodeController,
                 decoration: InputDecoration(
-                  labelText: 'Промокод',
-                  hintText: 'Введите промокод',
+                  labelText: LocaleData.promocode.getString(context),
+                  hintText: LocaleData.enterPromocode.getString(context),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -544,8 +465,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                       const SizedBox(width: 10),
                       Text(
                         promotionPrice > 0
-                            ? 'Скидка ${promotionPrice.toStringAsFixed(0)} сум'
-                            : 'Скидка ${promotionDiscount.toStringAsFixed(0)}%',
+                            ? '${LocaleData.discount.getString(context)} ${promotionPrice.toStringAsFixed(0)} ${LocaleData.som.getString(context)}'
+                            : '${LocaleData.discount.getString(context)} ${promotionDiscount.toStringAsFixed(0)}%',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -579,9 +500,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                           strokeWidth: 2,
                         ),
                       )
-                          : const Text(
-                        'Применить',
-                        style: TextStyle(
+                          : Text(
+                        LocaleData.apply.getString(context),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                         ),
@@ -591,9 +512,9 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                   const SizedBox(width: 10),
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: const Text(
-                      'Отмена',
-                      style: TextStyle(color: cDarkGreen),
+                    child: Text(
+                      LocaleData.cancel.getString(context),
+                      style: const TextStyle(color: cDarkGreen),
                     ),
                   ),
                 ],

@@ -34,8 +34,7 @@ mixin LocaleData {
   static const String forgotyourpassword = "forgotyourpassword";
   static const String areyouherefirsttime = "areyouherefirsttime";
   static const String enterverificationcode = "enterverificationcode";
-  static const String smssenttothesamephonenumber =
-      "smssenttothesamephonenumber";
+  static const String smssenttothesamephonenumber = "smssenttothesamephonenumber";
   static const String availablebonuses = "availablebonuses";
   static const String choosetheamount = "choosetheamount";
   static const String paymentmethods = "paymentmethods";
@@ -56,8 +55,7 @@ mixin LocaleData {
   static const String orderid = "orderid";
   static const String amount = "amonut";
   static const String weareonsocialnetworks = "weareonsocialnetworks";
-  static const String ifyouhavesoapsorsuggestions =
-      "ifyouhavesoapsorsuggestions";
+  static const String ifyouhavesoapsorsuggestions = "ifyouhavesoapsorsuggestions";
   static const String sendamessagetotheemail = "sendamessagetotheemail";
   static const String edit = "edit";
   static const String delete = "delete";
@@ -71,8 +69,7 @@ mixin LocaleData {
   static const String youdonnothaveaccount = "youdonnothaveaccount";
   static const String writeyourname = "writeyourname";
   static const String card = "card";
-  static const String areyousureyouwanttocontinue =
-      "areyousureyouwanttocontinue";
+  static const String areyousureyouwanttocontinue = "areyousureyouwanttocontinue";
   static const String cancel = "cancel";
   static const String writecardname = "writecardname";
   static const String cardnumber = "cardnumber";
@@ -113,6 +110,34 @@ mixin LocaleData {
   static const String ready = "ready";
   static const String sex = "sex";
   static const String cooldown = "cooldown";
+
+  // Promocode related translations
+  static const String promocode = "promocode";
+  static const String promocodeActive = "promocodeActive";
+  static const String applyPromocode = "applyPromocode";
+  static const String enterPromocode = "enterPromocode";
+  static const String activePromocode = "activePromocode";
+  static const String pleaseEnterPromocode = "pleaseEnterPromocode";
+  static const String promocodeAlreadyUsed = "promocodeAlreadyUsed";
+  static const String invalidPromocode = "invalidPromocode";
+  static const String authRequiredForPromocode = "authRequiredForPromocode";
+  static const String minimumOrderAmount = "minimumOrderAmount";
+  static const String addProductsFrom = "addProductsFrom";
+  static const String addProductToCart = "addProductToCart";
+  static const String promocodeValidOnlyOnBirthday = "promocodeValidOnlyOnBirthday";
+  static const String promocodeValidOnlyForFirstOrder = "promocodeValidOnlyForFirstOrder";
+  static const String errorApplyingPromocode = "errorApplyingPromocode";
+  static const String success = "success";
+  static const String promocodeApplied = "promocodeApplied";
+  static const String promocodeRemoved = "promocodeRemoved";
+  static const String apply = "apply";
+  static const String discount = "discount";
+  static const String discountAmount = "discountAmount";
+  static const String discountPercent = "discountPercent";
+  static const String free = "free";
+  static const String bonus = "bonus";
+  static const String gift = "gift";
+  static const String bonusProducts = "bonusProducts";
 
   static const Map<String, dynamic> EN = {
     category: "Category",
@@ -156,7 +181,7 @@ mixin LocaleData {
     min: "min",
     myaddresses: "My addresses",
     historyoforders: "History of orders",
-    language: "language",
+    language: "Change app language",
     logout: "Log out",
     deleteaccount: "Delete account",
     loginorregister: "Log in or register",
@@ -218,6 +243,34 @@ mixin LocaleData {
     ready: "Ready",
     sex: "Gender",
     cooldown: "Change limit reached",
+
+    // Promocode translations
+    promocode: "Promocode",
+    promocodeActive: "Promocode Active",
+    applyPromocode: "Apply Promocode",
+    enterPromocode: "Enter Promocode",
+    activePromocode: "Active Promocode",
+    pleaseEnterPromocode: "Please enter promocode",
+    promocodeAlreadyUsed: "Promocode already in use",
+    invalidPromocode: "Invalid promocode",
+    authRequiredForPromocode: "Authentication required to use this promocode",
+    minimumOrderAmount: "Minimum order amount",
+    addProductsFrom: "Add products from",
+    addProductToCart: "Add product to cart",
+    promocodeValidOnlyOnBirthday: "Promocode valid only on birthday",
+    promocodeValidOnlyForFirstOrder: "Promocode valid only for first order",
+    errorApplyingPromocode: "Error applying promocode",
+    success: "Success",
+    promocodeApplied: "Promocode applied",
+    promocodeRemoved: "Promocode removed",
+    apply: "Apply",
+    discount: "Discount",
+    discountAmount: "Discount amount",
+    discountPercent: "Discount percent",
+    free: "Free",
+    bonus: "Bonus",
+    gift: "Gift",
+    bonusProducts: "Bonus Products",
   };
 
   static const Map<String, dynamic> RU = {
@@ -323,7 +376,35 @@ mixin LocaleData {
     type: "Тип",
     ready: "Готов",
     sex: "Пол",
-    cooldown: "Лимит изменений достигнут"
+    cooldown: "Лимит изменений достигнут",
+
+    // Promocode translations
+    promocode: "Промокод",
+    promocodeActive: "Промокод активен",
+    applyPromocode: "Применить промокод",
+    enterPromocode: "Введите промокод",
+    activePromocode: "Активный промокод",
+    pleaseEnterPromocode: "Пожалуйста, введите промокод",
+    promocodeAlreadyUsed: "Промокод уже используется",
+    invalidPromocode: "Недействительный промокод",
+    authRequiredForPromocode: "Необходима авторизация для использования этого промокода",
+    minimumOrderAmount: "Минимальная сумма заказа",
+    addProductsFrom: "Добавьте продукты из",
+    addProductToCart: "Добавьте в корзину",
+    promocodeValidOnlyOnBirthday: "Промокод действителен только в день рождения",
+    promocodeValidOnlyForFirstOrder: "Промокод действителен только для первого заказа",
+    errorApplyingPromocode: "Произошла ошибка при применении промокода",
+    success: "Успешно",
+    promocodeApplied: "Промокод применен",
+    promocodeRemoved: "Промокод удален",
+    apply: "Применить",
+    discount: "Скидка",
+    discountAmount: "Сумма скидки",
+    discountPercent: "Процент скидки",
+    free: "Бесплатно",
+    bonus: "Бонус",
+    gift: "Подарок",
+    bonusProducts: "Бонусные продукты",
   };
 
   static const Map<String, dynamic> UZ = {
@@ -336,7 +417,7 @@ mixin LocaleData {
     restaurants: "RESTORANLAR",
     bonuses: "BONUSLAR",
     feedback: "Qayta aloqa",
-    add: "Qo’shish",
+    add: "Qo'shish",
     som: "so'm",
     share: "Ulashish",
     products: "Mahsulotlar",
@@ -344,7 +425,7 @@ mixin LocaleData {
     total: "Jami",
     usebonus: "Bonusdan foydalanish",
     confirm: "Tasdiqlash",
-    registration: "Ro’yxatdan o’tish",
+    registration: "Ro'yxatdan o'tish",
     phonenumber: "Telefon raqami",
     name: "Ismingis",
     password: "Parol",
@@ -354,7 +435,7 @@ mixin LocaleData {
     forgotyourpassword: "Parolni unutdingizmi?",
     areyouherefirsttime: "Bizda birinchi martamisiz?",
     enterverificationcode: "Tasdiqlash kodini kiriting",
-    smssenttothesamephonenumber: "Sms shu telefon raqamga jo’natildi",
+    smssenttothesamephonenumber: "Sms shu telefon raqamga jo'natildi",
     availablebonuses: "Mavjud bonuslar:",
     choosetheamount: "Miqdorni tanlang:",
     paymentmethods: "To'lov usuli",
@@ -375,10 +456,10 @@ mixin LocaleData {
     orderid: "Buyurtma ID",
     amount: "Miqdori",
     weareonsocialnetworks: "Biz ijtimoiy tarmoqlarda",
-    ifyouhavesoapsorsuggestions: "Agar sizda sovollar yoki takliflar bo’lsa",
+    ifyouhavesoapsorsuggestions: "Agar sizda sovollar yoki takliflar bo'lsa",
     sendamessagetotheemail: "Elektron pochtaga xabarni yuboring",
-    edit: "O’zgartirish",
-    delete: "O’chirish",
+    edit: "O'zgartirish",
+    delete: "O'chirish",
     track: "Kuzatuv",
     orderconfirmed: "Buyurtma tasdiqlandi",
     preparing: "Tayyorlanmoqda",
@@ -415,12 +496,12 @@ mixin LocaleData {
     ontheway: "Yo'lda",
     confirorder: "Zakazni tasdiqlash",
     chooselocation: "Joyni tanlang",
-    birthdate: "Tug‘ilgan sana",
-    selectYourBirthdate: "Tug‘ilgan sanani tanlang",
+    birthdate: "Tug'ilgan sana",
+    selectYourBirthdate: "Tug'ilgan sanani tanlang",
     gender: "Jins",
     selectYourGender: "Jinsni tanlang",
     done: "Tayyor",
-    addCommentsForLocation: "Izohlar qo‘shish",
+    addCommentsForLocation: "Izohlar qo'shish",
     enterComment: "Izoh kiriting",
     writeYourCommentHere: "Izohingizni bu yerga yozing...",
     submit: "Yuborish",
@@ -430,5 +511,33 @@ mixin LocaleData {
     ready: 'Tayyor',
     sex: "Jins",
     cooldown: "O'zgartirish chegarasi yetdi",
+
+    // Promocode translations
+    promocode: "Promokod",
+    promocodeActive: "Promokod faol",
+    applyPromocode: "Promokodni qo'llash",
+    enterPromocode: "Promokodni kiriting",
+    activePromocode: "Faol promokod",
+    pleaseEnterPromocode: "Iltimos, promokodni kiriting",
+    promocodeAlreadyUsed: "Promokod allaqachon ishlatilmoqda",
+    invalidPromocode: "Yaroqsiz promokod",
+    authRequiredForPromocode: "Ushbu promokodni ishlatish uchun avtorizatsiya kerak",
+    minimumOrderAmount: "Buyurtmaning minimal miqdori",
+    addProductsFrom: "Qo'shing mahsulotlar",
+    addProductToCart: "Savatga qo'shish",
+    promocodeValidOnlyOnBirthday: "Promokod faqat tug'ilgan kunda amal qiladi",
+    promocodeValidOnlyForFirstOrder: "Promokod faqat birinchi buyurtma uchun amal qiladi",
+    errorApplyingPromocode: "Promokodni qo'llashda xato",
+    success: "Muvaffaqiyatli",
+    promocodeApplied: "Promokod qo'llandi",
+    promocodeRemoved: "Promokod olib tashlandi",
+    apply: "Qo'llash",
+    discount: "Chegirma",
+    discountAmount: "Chegirma miqdori",
+    discountPercent: "Chegirma foizi",
+    free: "Bepul",
+    bonus: "Bonus",
+    gift: "Sovg'a",
+    bonusProducts: "Bonus mahsulotlar",
   };
 }

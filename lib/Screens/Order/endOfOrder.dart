@@ -8,6 +8,7 @@ import '../../Consts/Colors.dart';
 import '../../LocalMemory/Bonus.dart';
 import '../../LocalMemory/Order.dart';
 import '../../Localzition/locals.dart';
+import '../../Store/PromocodeStore.dart';
 
 class EndOFOrderScreen extends StatefulWidget {
   const EndOFOrderScreen({super.key});
@@ -18,6 +19,7 @@ class EndOFOrderScreen extends StatefulWidget {
 
 class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
   Map info = Get.arguments;
+  final PromocodeStore promocodeStore = Get.find<PromocodeStore>();
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +108,36 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                     SizedBox(
                       height: 20.h,
                     ),
+
+                    // Show promocode discount if there was one
+                    if (info['hasPromocode'] == true) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("${LocaleData.promocode.getString(context)}",
+                              style: TextStyle(
+                                fontSize: 17,
+                                color: cWhite,
+                                fontWeight: FontWeight.w400,
+                              )),
+                          Text(
+                              info['promocodeDiscount'] != null && info['promocodeDiscount'] > 0
+                                  ? "${info['promocodeDiscount']}% ${LocaleData.discount.getString(context)}"
+                                  : info['promocodeAmount'] != null
+                                      ? "-${info['promocodeAmount']} ${LocaleData.som.getString(context)}"
+                                      : "${LocaleData.discount.getString(context)}",
+                              style: TextStyle(
+                                fontSize: 17,
+                                color: Colors.green.shade200,
+                                fontWeight: FontWeight.w400,
+                              ))
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20.h,
+                      ),
+                    ],
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -133,7 +165,7 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                            info['discount']
+                            info['discount'] || info['hasPromocode'] == true
                                 ? "${LocaleData.bonuslowercase.getString(context)}"
                                 : "${LocaleData.bonuslowercase.getString(context)}",
                             style: TextStyle(
@@ -241,6 +273,10 @@ class _EndOFOrderScreenState extends State<EndOFOrderScreen> {
                           print("Hello Babu");
                           Order.clearOrder();
                           Bonus.clean();
+                          
+                          // Clear promocode state when order is completed
+                          promocodeStore.handleRemovePromo();
+                          
                           Get.offAll(() => MenuScreen());
                         },
                         style: ElevatedButton.styleFrom(
