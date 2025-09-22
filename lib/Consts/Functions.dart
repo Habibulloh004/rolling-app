@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 
@@ -21,29 +21,44 @@ String cGenerateRandomNumbers() {
 }
 
 Future<void> userUpDateGroupe() async {
-  // local cehch orders
-
-  String lengthString = await Api.getOrderLengthPoster();
-
-  print("--------------------");
-  print(lengthString);
-  if (lengthString == "Some thing went wrong") {
-  } else {
-    int length = int.parse(lengthString) + 1;
-    //Order starts from zero
-
-    print("Number of order length ${length}");
-
-    if (length <= 4) {
-      Api.updateGroupsIdUser(5);
-    } else if (length >= 5 && length <= 9) {
-      Api.updateGroupsIdUser(3);
-    } else if (length >= 10) {
-      Api.updateGroupsIdUser(4);
+  try {
+    print('Starting client order count update...');
+    
+    // Get current order length
+    String currentLengthStr = await Api.getOrderLengthPoster();
+    
+    // Handle case where it returns error message
+    if (currentLengthStr == "Some thing went wrong") {
+      print('Error getting current order length, defaulting to 0');
+      currentLengthStr = "0";
     }
-
-    print(length);
-    Api.setOrderLengthPoster(length.toString());
+    
+    // Parse current length and increment by 1
+    int currentLength = int.tryParse(currentLengthStr) ?? 0;
+    int newLength = currentLength + 1;
+    
+    print('Incrementing order length from $currentLength to $newLength');
+    
+    // Update the order length
+    await Api.setOrderLengthPoster(newLength.toString());
+    
+    print('Successfully updated client order length to $newLength');
+    
+    // Update client group based on order count (optional - adjust based on your business logic)
+    if (newLength >= 5 && newLength < 10) {
+      await Api.updateGroupsIdUser(2); // Silver tier
+      print('Updated client to Silver tier (group 2)');
+    } else if (newLength >= 10 && newLength < 20) {
+      await Api.updateGroupsIdUser(3); // Gold tier  
+      print('Updated client to Gold tier (group 3)');
+    } else if (newLength >= 20) {
+      await Api.updateGroupsIdUser(4); // Platinum tier
+      print('Updated client to Platinum tier (group 4)');
+    }
+    
+  } catch (e) {
+    print('Error updating client order count: $e');
+    // Don't throw the error to avoid breaking the order completion flow
   }
 }
 

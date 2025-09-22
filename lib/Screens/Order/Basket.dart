@@ -210,7 +210,7 @@ class _BasketScreenState extends State<BasketScreen> {
 
                                 // Pastki blok — Confirm doim pastda, joyidan siljimaydi
                                 _buildConfirmButton(context),
-                                SizedBox(height: 10 + MediaQuery.of(context).padding.bottom),
+                                SizedBox(height: 8),
                               ],
                             ),
                           ),

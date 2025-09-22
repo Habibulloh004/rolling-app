@@ -687,8 +687,14 @@ class Api {
 
   static setOrderLengthPoster(String number) async {
     try {
+      // Get current password - ensure it's just the digits
+      String password = User.getUserInfo('password');
+      
+      // Remove any non-digit characters to ensure consistency
+      password = password.replaceAll(RegExp(r'\D'), '');
+      
       Map comment = {
-        'password': 'password ${User.getUserInfo('password')}',
+        'password': 'password $password', // Keep the existing format for compatibility
         'length': number,
       };
 
@@ -699,12 +705,21 @@ class Api {
         'comment': json,
       };
 
+      print('Updating client order length to: $number');
+      print('Comment data: $json');
+
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.updateClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
-      print(response);
+      
+      print('Update response: ${response.data}');
+      
+      if (response.data != null && response.data['error'] != null) {
+        print('Error updating order length: ${response.data['error']}');
+      }
+      
     } catch (e) {
-      print(e);
+      print('Exception updating order length: $e');
     }
   }
 
