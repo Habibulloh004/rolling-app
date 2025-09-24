@@ -1054,6 +1054,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                 bool isAllowedToTakeOrder =
                                     await Api.isRestaurantOpen();
 
+                                // FIXED: Corrected the boolean logic - show error when restaurant is closed
                                 if (!isAllowedToTakeOrder) {
                                   Navigator.pop(context);
                                   Get.snackbar(
@@ -1126,40 +1127,38 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                                     }
                                     commentSpot += orderTypeComment;
 
+                                    String selectedAddressName = getSelectedAddressName();
+                                    String userComment = addressCommentController.text.trim();
+                                    String fullAddressComment = selectedAddressName;
+
+                                    // If user added a manual comment, append it to the address
+                                    if (userComment.isNotEmpty) {
+                                      fullAddressComment += "\nUser Comment: $userComment";
+                                    }
+
                                     Map<String, dynamic> orderMapData = {
                                       'created_at': formattedDateTime,
                                       'type': typeOfOrder == "delivery"
                                           ? typeOfOrder
-                                          : typeOfOrder +
-                                              " " +
-                                              restaurantText[indexOfResturant],
-                                      'products': Order.getOrderAmountAndId()
-                                          .toString(),
+                                          : typeOfOrder + " " + restaurantText[indexOfResturant],
+                                      'products': Order.getOrderAmountAndId().toString(),
                                       'client_address': getLatLong().toString(),
-                                      'client_id':
-                                          User.getUserInfo('id').toString(),
-                                      'phone':
-                                          User.getUserInfo('phone').toString(),
+                                      'client_id': User.getUserInfo('id').toString(),
+                                      'phone': User.getUserInfo('phone').toString(),
                                       'comment': commentSpot.isEmpty ? "no" : commentSpot,
-                                      // all_price = original total without bonus discount
-                                      // (backend can compute promocode discount from provided promocode data)
                                       'all_price': typeOfOrder == "delivery"
                                           ? (orderPriceInt + deliveryPriceInt) * 100
                                           : orderPriceInt * 100,
-                                      'payment':
-                                          creditCard ? "creditCard" : "cash",
+                                      'payment': creditCard ? "creditCard" : "cash",
                                       "promotion": "no",
-                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : 'no',
+                                      'promocode': promocodeData != null ? jsonEncode(promocodeData) : '',
                                       'status': '',
                                       'spot_id': '0',
-                                      'payed_bonus': Bonus.isBonusExists()
-                                          ? bonusInt * 100
-                                          : 0,
+                                      'payed_bonus': Bonus.isBonusExists() ? bonusInt * 100 : 0,
                                       'payed_sum': payed_sum,
                                       'fcm': fcmToken,
                                       'fcm_lng': Language.getLanguage(),
-                                      "address_comment":
-                                          addressCommentController.text
+                                      "address_comment": fullAddressComment, // Use full address name + user comment
                                     };
 
                                     int priceOfOrder = typeOfOrder == "delivery"
@@ -1323,10 +1322,9 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
       locationsBoolList.length,
       (index) {
         print("--------");
-        print(MapLocation.getLocationAt(
-            (locationsBoolList.length - 1) - index)['name']);
         String name = MapLocation.getLocationAt(
-            (locationsBoolList.length - 1) - index)['name'];
+            (locationsBoolList.length - 1) - index)['name'] ?? 'Unknown Location';
+        print(name); // This will now show the full address
 
         return GestureDetector(
           onTap: () {
@@ -1337,7 +1335,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
           },
           child: Container(
             margin: EdgeInsets.only(bottom: 10),
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0), // Increased vertical padding
             decoration: BoxDecoration(
               color: cDarkGreen, // Adjust the color to match your design
               borderRadius: BorderRadius.circular(
@@ -1355,15 +1353,15 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                     ),
                     SizedBox(width: 10.w),
                     Container(
-                      width: MediaQuery.of(context).size.width * 0.5,
+                      width: MediaQuery.of(context).size.width * 0.6, // Increased width to show more text
                       child: Text(
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        name,
+                        name, // Show full address name
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16.0, // Adjust the font size as needed
+                          fontSize: 14.0, // Slightly smaller font to fit more text
                         ),
+                        maxLines: 3, // Allow multiple lines for long addresses
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1394,6 +1392,7 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
     return result;
   }
 
+
   String getLatLong() {
     String resulr = '';
     for (int i = 0; i < locationsBoolList.length; i++) {
@@ -1406,6 +1405,17 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
       }
     }
     return resulr;
+  }
+  String getSelectedAddressName() {
+    String result = '';
+    for (int i = 0; i < locationsBoolList.length; i++) {
+      if (locationsBoolList[i] == true) {
+        Map data = MapLocation.getLocationAt((locationsBoolList.length - 1) - i);
+        result = data['name'] ?? 'Unknown Location'; // Get the full address name
+        break;
+      }
+    }
+    return result;
   }
 }
 

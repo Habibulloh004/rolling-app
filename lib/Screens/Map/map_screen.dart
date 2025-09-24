@@ -24,21 +24,81 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late Map action;
-  late double currentLat;
-  late double currentLon;
+  double currentLat = 55.7522200; // Default to Moscow
+  double currentLon = 37.6155600; // Default to Moscow
   double zoomLevel = 18;
   late YandexMapController _yandexMapController;
   final mapControllerCompleter = Completer<YandexMapController>();
   String addressDetail = "Map Page";
   final AddressDetailRepository repository = AddressDetailRepository();
+  bool isLoadingAddress = false;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _initPermission().ignore();
     AndroidYandexMap.useAndroidViewSurface = false;
     action = Get.arguments;
+  }
+
+  // Helper methods for address formatting in UI
+  String _getShortAddress(String fullAddress) {
+    if (fullAddress.length <= 40) return fullAddress;
+    
+    // For long addresses, show the first part
+    List<String> parts = fullAddress.split(',');
+    if (parts.isNotEmpty) {
+      String firstPart = parts.first.trim();
+      if (firstPart.length > 40) {
+        return firstPart.substring(0, 37) + "...";
+      }
+      
+      // If first part is short, try to add second part
+      if (parts.length > 1 && firstPart.length < 25) {
+        String secondPart = parts[1].trim();
+        String combined = "$firstPart, $secondPart";
+        if (combined.length <= 40) {
+          return combined;
+        } else {
+          return firstPart;
+        }
+      }
+      
+      return firstPart;
+    }
+    
+    return fullAddress.substring(0, 37) + "...";
+  }
+  
+  String _getSecondLine(String fullAddress) {
+    String shortAddress = _getShortAddress(fullAddress);
+    
+    // If the short address is the same as full, no second line needed
+    if (shortAddress == fullAddress) return "";
+    
+    // Extract remaining part after the short address
+    List<String> parts = fullAddress.split(',');
+    if (parts.length > 1) {
+      // Find where the short address ends
+      int startIndex = 1;
+      if (shortAddress.contains(',')) {
+        // Short address contains multiple parts
+        int commaCount = ','.allMatches(shortAddress).length;
+        startIndex = commaCount + 1;
+      }
+      
+      if (startIndex < parts.length) {
+        String remaining = parts.skip(startIndex).join(', ').trim();
+        if (remaining.isNotEmpty && remaining.length > 3) {
+          if (remaining.length > 50) {
+            return remaining.substring(0, 47) + "...";
+          }
+          return remaining;
+        }
+      }
+    }
+    
+    return "";
   }
 
   @override
@@ -47,26 +107,70 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cDarkGreen,
-        title: Text(addressDetail,
-            style: TextStyle(
-              color: cWhite,
-            )),
+        title: Row(
+          children: [
+            if (isLoadingAddress)
+              Container(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: cWhite,
+                  strokeWidth: 2,
+                ),
+              ),
+            if (isLoadingAddress) SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getShortAddress(addressDetail),
+                    style: TextStyle(
+                      color: cWhite,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  if (_getShortAddress(addressDetail) != addressDetail &&
+                      addressDetail.length > 40) ...[
+                    SizedBox(height: 2),
+                    Text(
+                      _getSecondLine(addressDetail),
+                      style: TextStyle(
+                        color: cWhite.withOpacity(0.8),
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
         leading: IconButton(
-            onPressed: () {
-              Get.back();
-            },
-            icon: Icon(
-              Icons.navigate_before,
-              color: cWhite,
-              size: 30,
-            )),
+          onPressed: () {
+            Get.back();
+          },
+          icon: const Icon(
+            Icons.navigate_before,
+            color: cWhite,
+            size: 30,
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "current_location",
         onPressed: () {
           _fetchCurrentLocation();
         },
         backgroundColor: Colors.white,
-        child: const Icon(Icons.my_location),
+        elevation: 4,
+        child: const Icon(Icons.my_location, color: cDarkGreen),
       ),
       body: Stack(
         children: [
@@ -85,6 +189,7 @@ class _MapScreenState extends State<MapScreen> {
               }
             },
           ),
+          // Centered location pin
           const Positioned(
             top: 0,
             bottom: 0,
@@ -96,95 +201,133 @@ class _MapScreenState extends State<MapScreen> {
               size: 40,
             ),
           ),
+          // Zoom controls
           Positioned(
-              bottom: size.height * 0.2,
-              right: 20,
-              child: Column(
-                children: [
-                  FloatingActionButton(
-                    onPressed: () {
-                      addZoom();
-                    },
-                    backgroundColor: Colors.white,
-                    child: const Icon(Icons.add),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  FloatingActionButton(
-                    onPressed: () {
-                      removeZoom();
-                    },
-                    backgroundColor: Colors.white,
-                    child: const Icon(Icons.remove),
-                  ),
-                ],
-              )),
-          Positioned(
-              bottom: size.height * 0.05,
-              left: size.width * 0.1,
-              child: Container(
-                width: size.width * 0.65,
-                height: size.height * 0.07,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(cDarkGreen),
-                    foregroundColor: MaterialStateProperty.all(Colors.white),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(10.0), // Rounded corners
-                      ),
-                    ),
-                  ),
+            bottom: size.height * 0.25,
+            right: 16,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  heroTag: "zoom_in",
                   onPressed: () {
-                    if (addressDetail != "...loading") {
-                      print("****************");
-                      print(MapLocation.isNoMaps());
-                      print(action['action'] == 'add');
-                      //is empty
-                      if (action['action'] == 'add' && MapLocation.isNoMaps()) {
-                        print("------efkekfefkk---------");
-                        Map data = {
-                          'name': addressDetail,
-                          'lat': currentLat,
-                          'lon': currentLon,
-                        };
-                        MapLocation.addLocation(data);
-                        //cheching the lenght of how many they have
-                        //order check
-
-                        if (Order.isNoOrder()) {
-                          Get.offAll(() => MenuScreen());
-                        } else {
-                          Get.off(() => PaymentAndLocationScreen());
-                        }
-                      } else if (action['action'] == 'add') {
-                        Map data = {
-                          'name': addressDetail,
-                          'lat': currentLat,
-                          'lon': currentLon,
-                        };
-                        MapLocation.addLocation(data);
-                        Get.back();
-                      } else if (action['action'] == 'edit') {
-                        Map data = {
-                          'name': addressDetail,
-                          'lat': currentLat,
-                          'lon': currentLon,
-                        };
-                        MapLocation.updateAt(action['id'], data);
-                        Get.back();
-                      }
-                    }
+                    addZoom();
                   },
-                  child: Text("${LocaleData.confirm.getString(context)}",
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      )),
+                  backgroundColor: Colors.white,
+                  elevation: 2,
+                  mini: true,
+                  child: const Icon(Icons.add, color: cDarkGreen),
                 ),
-              ))
+                SizedBox(height: 8),
+                FloatingActionButton(
+                  heroTag: "zoom_out",
+                  onPressed: () {
+                    removeZoom();
+                  },
+                  backgroundColor: Colors.white,
+                  elevation: 2,
+                  mini: true,
+                  child: const Icon(Icons.remove, color: cDarkGreen),
+                ),
+              ],
+            )
+          ),
+          // Confirm button
+          Positioned(
+            bottom: size.height * 0.05,
+            left: size.width * 0.1,
+            child: Container(
+              width: size.width * 0.8,
+              height: size.height * 0.07,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cDarkGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  disabledBackgroundColor: Colors.grey[400],
+                ),
+                onPressed: isLoadingAddress 
+                    ? null 
+                    : () {
+                  // Allow confirmation as long as we're not loading and have address info
+                  if (!isLoadingAddress && addressDetail != "Map Page" && 
+                      !addressDetail.contains("...resolving")) {
+                    print("****************");
+                    print("Action: ${action['action']}");
+                    print("Is no maps: ${MapLocation.isNoMaps()}");
+                    print("Address: $addressDetail");
+                    
+                    // Only handle add action now
+                    if (action['action'] == 'add' && MapLocation.isNoMaps()) {
+                      print("------Adding first location---------");
+                      Map data = {
+                        'name': addressDetail,
+                        'shortName': _getShortAddress(addressDetail),
+                        'lat': currentLat,
+                        'lon': currentLon,
+                      };
+                      MapLocation.addLocation(data);
+                      
+                      //checking the length of how many they have
+                      //order check
+                      if (Order.isNoOrder()) {
+                        Get.offAll(() => MenuScreen());
+                      } else {
+                        Get.off(() => PaymentAndLocationScreen());
+                      }
+                    } else if (action['action'] == 'add') {
+                      Map data = {
+                        'name': addressDetail,
+                        'shortName': _getShortAddress(addressDetail),
+                        'lat': currentLat,
+                        'lon': currentLon,
+                      };
+                      MapLocation.addLocation(data);
+                      Get.back();
+                    }
+                  }
+                },
+                child: isLoadingAddress 
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            "Loading...",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            "${LocaleData.confirm.getString(context)}",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            )
+          )
         ],
       ),
     );
@@ -194,6 +337,8 @@ class _MapScreenState extends State<MapScreen> {
     if (!await LocationService().checkPermission()) {
       await LocationService().requestPermission();
     }
+    
+    // Get current location
     await _fetchCurrentLocation();
   }
 
@@ -202,7 +347,9 @@ class _MapScreenState extends State<MapScreen> {
     const defLocation = MoscowLocation();
     try {
       location = await LocationService().getCurrentLocation();
-    } catch (_) {
+      print('✅ Got current location: ${location.lat}, ${location.long}');
+    } catch (e) {
+      print('❌ Failed to get current location: $e');
       location = defLocation;
     }
     updateAddressDetail(location);
@@ -211,68 +358,80 @@ class _MapScreenState extends State<MapScreen> {
     _moveToCurrentLocation(location);
   }
 
-  Future<void> _moveToCurrentLocation(
-    AppLatLong appLatLong,
-  ) async {
-    (await mapControllerCompleter.future).moveCamera(
-      animation: const MapAnimation(type: MapAnimationType.linear, duration: 1),
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: Point(
-            latitude: appLatLong.lat,
-            longitude: appLatLong.long,
-          ),
-          zoom: zoomLevel,
-        ),
-      ),
-    );
-  }
-
-  Future<void> updateAddressDetail(AppLatLong latLong) async {
-    addressDetail = "...loading";
-    setState(() {});
-    String? data = await repository.getAddressDetail(latLong);
-    // String fullAddress =
-    //     data!.response!.geoObjectCollection!.featureMember!.isEmpty
-    //         ? "unknowen_place"
-    //         : data.response!.geoObjectCollection!.featureMember![0].geoObject!
-    //             .metaDataProperty!.geocoderMetaData!.address!.formatted
-    //             .toString();
-    //
-    // List<String> addressParts = fullAddress.split(', ');
-    //
-    // String county = addressParts[addressParts.length - 2];
-    // String city = addressParts[addressParts.length - 1];
-
-    addressDetail = data ?? "error";
-    setState(() {});
-    print(addressDetail);
-  }
-
-  addZoom() {
-    if (_yandexMapController != null) {
-      _yandexMapController.moveCamera(
+  Future<void> _moveToCurrentLocation(AppLatLong appLatLong) async {
+    try {
+      (await mapControllerCompleter.future).moveCamera(
+        animation: const MapAnimation(type: MapAnimationType.linear, duration: 1),
         CameraUpdate.newCameraPosition(
           CameraPosition(
             target: Point(
-                latitude: currentLat,
-                longitude: currentLon), // Example coordinates
-            zoom: zoomLevel += 1,
+              latitude: appLatLong.lat,
+              longitude: appLatLong.long,
+            ),
+            zoom: zoomLevel,
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error moving camera: $e');
+    }
+  }
+
+  Future<void> updateAddressDetail(AppLatLong latLong) async {
+    setState(() {
+      addressDetail = "...resolving address";
+      isLoadingAddress = true;
+    });
+    
+    // Add 0.5 second delay before resolving address
+    await Future.delayed(Duration(milliseconds: 500));
+    
+    try {
+      print('🔍 Starting address resolution for: ${latLong.lat}, ${latLong.long}');
+      String? data = await repository.getAddressDetail(latLong);
+      
+      setState(() {
+        if (data != null && data.isNotEmpty) {
+          addressDetail = data;
+          print('✅ Address resolved successfully: $data');
+        } else {
+          addressDetail = "Unable to resolve address";
+          print('❌ Geocoding returned empty result');
+        }
+        isLoadingAddress = false;
+      });
+      
+    } catch (e) {
+      setState(() {
+        addressDetail = "Address resolution failed";
+        isLoadingAddress = false;
+      });
+      print('💥 Error during address resolution: $e');
+    }
+  }
+
+  void addZoom() {
+    if (_yandexMapController != null && zoomLevel < 21) {
+      zoomLevel += 1;
+      _yandexMapController.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: Point(latitude: currentLat, longitude: currentLon),
+            zoom: zoomLevel,
           ),
         ),
       );
     }
   }
 
-  removeZoom() {
-    if (_yandexMapController != null) {
+  void removeZoom() {
+    if (_yandexMapController != null && zoomLevel > 1) {
+      zoomLevel -= 1;
       _yandexMapController.moveCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
-            target: Point(
-                latitude: currentLat,
-                longitude: currentLon), // Example coordinates
-            zoom: zoomLevel -= 1,
+            target: Point(latitude: currentLat, longitude: currentLon),
+            zoom: zoomLevel,
           ),
         ),
       );
