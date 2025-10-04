@@ -1,0 +1,30 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "rolling-sushi-project",
+          "appId": "1:637801967326:android:2243c49b331c992ae79c4f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "rolling-sushi-project",
+          "appId": "1:637801967326:ios:1e0c2a0adfabaeebe79c4f",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "rolling-sushi-project",
+          "configurations": {
+            "android": "1:637801967326:android:2243c49b331c992ae79c4f",
+            "ios": "1:637801967326:ios:1e0c2a0adfabaeebe79c4f"
+          }
+        }
+      }
+    }
+  }
+}

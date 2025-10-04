@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCWwesq9MZAVEcENlPDcJOEmZ6VoC597zs',
-    appId: '1:637801967326:android:2243c49b331c992ae79c4f',
-    messagingSenderId: '637801967326',
-    projectId: 'rolling-sushi-project',
-    storageBucket: 'rolling-sushi-project.firebasestorage.app',
+    apiKey: 'AIzaSyDJpYTd_0hxb9oqVG4gMbXGA9cLQjYIq0I',
+    appId: '1:456036848053:android:6779e7a8a4ee66af6c49fc',
+    messagingSenderId: '456036848053',
+    projectId: 'rolling-sushi-fcf2c',
+    storageBucket: 'rolling-sushi-fcf2c.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDw67N_7IeTg4FXyxsQEgnHyCgQduXTm_M',
-    appId: '1:637801967326:ios:1e0c2a0adfabaeebe79c4f',
-    messagingSenderId: '637801967326',
-    projectId: 'rolling-sushi-project',
-    storageBucket: 'rolling-sushi-project.firebasestorage.app',
-    iosBundleId: 'com.abdurrahmonxoja.rollingSushi',
+    apiKey: 'AIzaSyBB6kmNq5rhDe-yUCopp9K47dh8Unz0Cuc',
+    appId: '1:456036848053:ios:3e22f1334564763b6c49fc',
+    messagingSenderId: '456036848053',
+    projectId: 'rolling-sushi-fcf2c',
+    storageBucket: 'rolling-sushi-fcf2c.firebasestorage.app',
+    iosBundleId: 'rolling-sushi-fcf2c.firebasestorage.app',
   );
+
 }

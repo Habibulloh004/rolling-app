@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "637801967326",
-    "project_id": "rolling-sushi-project",
-    "storage_bucket": "rolling-sushi-project.firebasestorage.app"
+    "project_number": "456036848053",
+    "project_id": "rolling-sushi-fcf2c",
+    "storage_bucket": "rolling-sushi-fcf2c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:637801967326:android:2243c49b331c992ae79c4f",
+        "mobilesdk_app_id": "1:456036848053:android:6779e7a8a4ee66af6c49fc",
         "android_client_info": {
           "package_name": "com.abdurrahmonxoja.RollingSushi"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCWwesq9MZAVEcENlPDcJOEmZ6VoC597zs"
+          "current_key": "AIzaSyDJpYTd_0hxb9oqVG4gMbXGA9cLQjYIq0I"
         }
       ],
       "services": {

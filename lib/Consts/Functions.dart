@@ -66,8 +66,6 @@ String splitText(String text) {
   // Split the input text by the separator ***
   List<String> parts = text.split('***');
 
-  print(parts);
-
   if (parts.length < 2) {
     return parts[0];
   } else {

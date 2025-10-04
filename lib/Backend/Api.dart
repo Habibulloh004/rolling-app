@@ -233,16 +233,12 @@ class Api {
   static Future<List<Product>> getProducts(String id) async {
     List<Product> products = [];
     try {
-      print(id);
       final response = await dio.get(
           'https://rolling-sushi.joinposter.com/api/menu.getProducts?token=046902:6281755091471320780488d484cc4b78&category_id=${id}');
       final data = response.data['response'];
-      print(data);
 
       if (response.data['error'] == null) {
         for (int i = 0; i < data.length; i++) {
-          print("----------------");
-          print(data[i]['hidden'] == "0");
           if (data[i]['spots'][0]["visible"] == "1") {
             String ingredientsString = "";
             var ingredients = data[i]["ingredients"];
@@ -313,8 +309,6 @@ class Api {
   }
 
   static sendSms(String code, String phoneNumber) async {
-    print(code);
-
     String modifiedPhoneNumber = phoneNumber.replaceAll("+", "");
     //Rolling Sushi: Ilovamizda ro'yxatdan o'tkaningiz uchun minnatdorchilik bildiramiz. Tasdiqlash uchun kod: %d
     try {
@@ -324,10 +318,8 @@ class Api {
         "Rolling Sushi: Ilovamizda ro'yxatdan o'tkaningiz uchun minnatdorchilik bildiramiz. Tasdiqlash uchun kod: ${code}",
       };
 
-      print(data);
       Response response = await dio
           .post('https://rollingadmin.uz:5000/send_sms', data: data);
-      print(response.data);
     } catch (e) {
       print(e);
     }
@@ -335,8 +327,6 @@ class Api {
 
   static Future<Map> createClient(Map data) async {
     try {
-      print('inside the api');
-      print(data);
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.createClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
@@ -372,8 +362,6 @@ class Api {
     try {
       final response = await dio.get(
           'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
-      print("--------------");
-      print(response.data['comment']);
 
       // Handle both string and object comment formats
       Map data;
@@ -385,7 +373,6 @@ class Api {
 
       String passwodDb = data['password']?.toString()?.replaceAll(RegExp(r'\D'), '') ?? '';
 
-      print(password);
       if (response.data != " ") {
         // works
         if (passwodDb == password) {
@@ -423,10 +410,6 @@ class Api {
           'https://rollingadmin.uz:5000/get_client/${modifiedPhoneNumber}');
       String passwodDb = response.data['comment'].replaceAll(RegExp(r'\D'), '');
 
-      print("DENDENDEN");
-      print(response.data['client_sex']);
-      print(response.data['birthday']);
-
       Map data = {
         'res': true,
         'name': response.data['lastname'],
@@ -453,7 +436,6 @@ class Api {
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.updateClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
-      print(response);
     } catch (e) {
       print(e);
     }
@@ -469,7 +451,6 @@ class Api {
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.updateClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
-      print(response);
     } catch (e) {
       print(e);
     }
@@ -485,7 +466,6 @@ class Api {
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.updateClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
-      print(response);
     } catch (e) {
       print(e);
     }
@@ -495,13 +475,10 @@ class Api {
 
   static Future<String> giveOrder(Map data) async {
     print('Order data');
-    print(data);
 
     try {
       Response response = await dio
           .post('https://rollingadmin.uz:5000/add_order', data: data);
-      print(response.data);
-      print(response.data['order_id'].toString());
       return response.data['order_id'].toString();
     } catch (e) {
       print(e);
@@ -527,17 +504,13 @@ class Api {
   static Future<Map> getUserBonus() async {
     String result = "";
     try {
-      print(User.getUserInfo('id'));
       final response = await dio.get(
           'https://rollingadmin.uz:5000/get_bonus/${User.getUserInfo('id').toString()}');
       result = response.data['bonus_value'];
-      print("-----------");
-      print(result);
 
       String numberStrTrimmed = '0';
       String priceResult = '0';
 
-      print(result.runtimeType);
 
       if (int.parse(result) > 0) {
         numberStrTrimmed = result.substring(0, result.length - 2);
@@ -547,9 +520,6 @@ class Api {
                 " " +
                 numberStrTrimmed.substring(numberStrTrimmed.length - 3);
       }
-
-      print(numberStrTrimmed);
-      print(priceResult);
 
       return {
         'string': priceResult,
@@ -570,10 +540,8 @@ class Api {
           .get('https://rollingadmin.uz:5000/get_product?name=${name}');
       // print(response);
       final data = response.data;
-      print(data);
 
       for (int i = 0; i < data.length; i++) {
-        print(data[i]['name']);
         String ingredientsString = "";
         var ingredients = data[i]["ingredients"];
         if (ingredients == null) {
@@ -586,10 +554,8 @@ class Api {
 
         var descriptionOrg = data[i]["product_production_description"];
         String descriptionClear = "";
-        print(descriptionOrg == null);
         if (descriptionOrg == null) {
           descriptionClear = "";
-          print(descriptionClear);
         } else {
           descriptionClear = descriptionOrg.replaceAll('\n', '');
         }
@@ -705,14 +671,10 @@ class Api {
         'comment': json,
       };
 
-      print('Updating client order length to: $number');
-      print('Comment data: $json');
-
       Response response = await dio.post(
           'https://rolling-sushi.joinposter.com/api/clients.updateClient?token=046902:6281755091471320780488d484cc4b78',
           data: data);
       
-      print('Update response: ${response.data}');
       
       if (response.data != null && response.data['error'] != null) {
         print('Error updating order length: ${response.data['error']}');
@@ -740,16 +702,12 @@ class Api {
         'extraId': uniqString,
       };
 
-      print(data);
-
       Response response = await dio.post(
         'https://rollingadmin.uz:5000/pay',
         data: data,
       );
 
-      print(response);
       if (response.data['error'] == null) {
-        print(response.data['result']['session']);
         return {
           'status': 'success',
           'session': response.data['result']['session'].toString(),
@@ -780,7 +738,6 @@ class Api {
         data: data,
       );
 
-      print(response);
       if (response.data['error'] == null) {
         return {
           'status': 'success',
@@ -816,7 +773,6 @@ class Api {
         allowed = true;
       }
 
-      print(allowed);
       return allowed;
     } catch (e) {
       print(e);
@@ -854,8 +810,6 @@ class Api {
       final response =
       await dio.get("https://sushiserver.onrender.com/getNews");
 
-      print(response.data);
-
       return response.data;
     } catch (e) {
       debugPrint('Error fetching delivery price: ${e.toString()}');
@@ -869,7 +823,6 @@ class Api {
           "https://rollingadmin.uz:5000/update_order_feedback/${orderId}",
           data: data);
 
-      print(response.data);
     } catch (e) {
       debugPrint(
           'Error fetching delivery price: ${e.toString()}'); // Consider a better fallback value or propagate the error as needed.
