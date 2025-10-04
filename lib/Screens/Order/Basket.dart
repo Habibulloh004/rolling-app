@@ -688,6 +688,9 @@ class _BasketScreenState extends State<BasketScreen> {
                                           } else {
                                             Order.deleteOrderAt(index);
                                           }
+
+                                          // Update totals and validate promocode after change
+                                          _updatePrices();
                                         });
                                       },
                                     ),
@@ -723,6 +726,9 @@ class _BasketScreenState extends State<BasketScreen> {
                                           if (amount <= 10) {
                                             orderItem['amount'] = '${amount}';
                                           }
+
+                                          // Update totals and validate promocode after change
+                                          _updatePrices();
                                         });
                                       },
                                     ),
@@ -754,10 +760,14 @@ class _BasketScreenState extends State<BasketScreen> {
                           onTap: () {
                             setState(() {
                               if (isPromoItem) {
-                                // If deleting a bonus product, you might want to handle
-                                // promocode removal here if you have promocode logic
-                                // For now, just delete the item
+                                // Delete the bonus product and remove the active promocode
                                 Order.deleteOrderAt(index);
+                                try {
+                                  promocodeStore.handleRemovePromo();
+                                } catch (e) {
+                                  // Fail-safe: ignore if store not available
+                                  print('Error removing promocode after bonus deletion: $e');
+                                }
                               } else {
                                 // Regular product deletion
                                 Order.deleteOrderAt(index);
@@ -766,6 +776,9 @@ class _BasketScreenState extends State<BasketScreen> {
                               if (Order.getOrderLength() == 0) {
                                 Get.offAll(() => MenuScreen());
                               }
+
+                              // Update totals and validate promocode after change
+                              _updatePrices();
                             });
                           },
                           child: Container(

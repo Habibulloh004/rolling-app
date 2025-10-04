@@ -14,6 +14,7 @@ import 'package:sushi_alpha_project/NoInternat/dependecy_injection.dart';
 import 'package:upgrader/upgrader.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:sushi_alpha_project/Consts/Colors.dart';
 
 import 'LocalMemory/Boxes.dart';
 import 'LocalMemory/Language.dart';
@@ -22,7 +23,7 @@ import 'Localzition/locals.dart';
 import 'Notification/notification_funtions.dart';
 import 'Screens/Menu/Menu.dart';
 import 'Screens/Profile/Language.dart';
-import 'Store/PromocodeStore.dart';
+import 'Store/PromocodeStore.dart'; // 192.168.1.41
 import 'firebase_options.dart';
 
 // Configuration - Replace with your actual server URL
@@ -31,6 +32,15 @@ const String SERVER_URL = 'http://192.168.1.41:3000'; // Change this to your pro
 // Global notification plugin instance
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
+// Build a stable, unique notification ID for Android to prevent
+// unintended replacements or cancellations when multiple notifications arrive.
+int buildAndroidNotificationId(RemoteMessage message) {
+  final base = message.messageId ??
+      '${message.sentTime?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch}-${message.data.hashCode}';
+  // Ensure 32-bit positive int
+  return base.hashCode & 0x7fffffff;
+}
 
 // Background message handler for Firebase
 @pragma('vm:entry-point')
@@ -51,58 +61,58 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     return;
   }
 
+  // On iOS, APNs will present notifications when the app is in background
+  // if the message contains a notification payload. Showing a local
+  // notification as well would cause a duplicate. Skip local show on iOS.
+  if (Platform.isIOS) {
+    print('ℹ️ iOS background: letting system/APNs present notification; skipping local show.');
+    return;
+  }
+
   print("📱 Notification Title: ${notification.title}");
   print("📱 Notification Body: ${notification.body}");
 
-  // Create notification channel for Android
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'high_importance_channel',
-    'High Importance Notifications',
-    description: 'This channel is used for important notifications.',
-    importance: Importance.max,
-  );
-
+  // Ensure alerts channel exists for Android background isolate
   if (Platform.isAndroid) {
+    const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
+      'alerts_channel',
+      'Alerts',
+      description: 'Always alerts with sound and heads-up for Rolling Sushi.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+      enableLights: true,
+      ledColor: Color(0xff004032),
+    );
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+        ?.createNotificationChannel(alertsChannel);
   }
 
-  // Determine channel based on message type
-  String channelId = 'general_channel';
-  Priority priority = Priority.high;
-  Importance importance = Importance.high;
-  
-  final messageType = message.data['messageType'];
-  final isUrgent = message.data['urgent'] == 'true';
-  
-  if (messageType == 'orderReady' || messageType == 'order_update' || isUrgent) {
-    channelId = 'high_importance_channel';
-    priority = Priority.max;
-    importance = Importance.max;
-  }
+  // Always alert on Android using alerts channel
+  String channelId = 'alerts_channel';
+  Priority priority = Priority.max;
+  Importance importance = Importance.max;
 
-  // Show notification for ALL types
+  // Show notification for ALL types (Android only; iOS is skipped above)
   await flutterLocalNotificationsPlugin.show(
-    notification.hashCode,
+    buildAndroidNotificationId(message),
     notification.title ?? 'Rolling Sushi',
     notification.body ?? 'New notification received',
     NotificationDetails(
       android: AndroidNotificationDetails(
         channelId,
-        channelId == 'high_importance_channel' 
-            ? 'High Importance Notifications' 
-            : 'General Notifications',
-        channelDescription: channelId == 'high_importance_channel'
-            ? 'Important notifications like order updates'
-            : 'General app notifications',
+        'Alerts',
+        channelDescription: 'Always alerts with sound and heads-up for Rolling Sushi.',
         icon: '@drawable/ic_notification',
         color: const Color(0xff004032),
         priority: priority,
         importance: importance,
         playSound: true,
         enableVibration: true,
+        onlyAlertOnce: false,
         showWhen: true,
         when: DateTime.now().millisecondsSinceEpoch,
       ),
@@ -213,7 +223,23 @@ Future<void> requestNotificationPermissions() async {
         sound: true,
       );
     }
-    
+    // Android 13+ runtime notification permission
+    if (Platform.isAndroid) {
+      try {
+        await flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      } catch (e) {
+        print('⚠️ Android notifications permission request failed: $e');
+      }
+      try {
+        await messaging.requestPermission();
+      } catch (e) {
+        print('⚠️ FirebaseMessaging.requestPermission on Android failed: $e');
+      }
+    }
+
     // Rest of your permission code...
   } catch (e) {
     print('❌ Error requesting permissions: $e');
@@ -278,6 +304,19 @@ Future<void> createNotificationChannels() async {
       ledColor: Color(0xff004032),
     );
 
+    // Alerts channel: always heads-up with sound for all app notifications
+    const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
+      'alerts_channel',
+      'Alerts',
+      description: 'Always alerts with sound and heads-up for Rolling Sushi.',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+      enableLights: true,
+      ledColor: Color(0xff004032),
+    );
+
     // General channel for regular notifications
     const AndroidNotificationChannel generalChannel =
         AndroidNotificationChannel(
@@ -302,6 +341,7 @@ Future<void> createNotificationChannels() async {
     );
 
     await androidPlugin.createNotificationChannel(highImportanceChannel);
+    await androidPlugin.createNotificationChannel(alertsChannel);
     await androidPlugin.createNotificationChannel(generalChannel);
     await androidPlugin.createNotificationChannel(promotionalChannel);
     
@@ -528,8 +568,7 @@ Future<void> unregisterTokenFromServer(String token) async {
 // Enhanced Firebase Messaging setup with retry mechanisms
 Future<void> setupFirebaseMessaging() async {
   try {
-    // Set background message handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // Background message handler is registered in main(); avoid duplicate registration here
 
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -803,35 +842,28 @@ void handleForegroundMessage(RemoteMessage message) {
     return;
   }
 
+  // On iOS, when foreground presentation options are enabled, the system
+  // will present notifications that include a notification payload. Showing
+  // a local notification here would duplicate it. Let iOS handle it.
+  if (Platform.isIOS) {
+    print('ℹ️ iOS foreground: system will present notification; skipping local show.');
+    return;
+  }
+
   try {
-    // Determine notification channel and priority based on message data
-    String channelId = 'general_channel';
-    String channelName = 'General Notifications';
-    String channelDescription = 'General app notifications';
-    Priority priority = Priority.high;
-    Importance importance = Importance.high;
+    // Always alert on Android using a dedicated alerts channel
+    String channelId = 'alerts_channel';
+    String channelName = 'Alerts';
+    String channelDescription = 'Always alerts with sound and heads-up for Rolling Sushi.';
+    Priority priority = Priority.max;
+    Importance importance = Importance.max;
     
-    // Check message type for priority and channel selection
+    // Keep messageType for action buttons and payload handling
     final messageType = message.data['messageType'] ?? message.data['type'];
-    final isUrgent = message.data['urgent'] == 'true';
-    
-    if (messageType == 'orderReady' || messageType == 'order_update' || isUrgent) {
-      channelId = 'high_importance_channel';
-      channelName = 'High Importance Notifications';
-      channelDescription = 'Important notifications like order updates';
-      priority = Priority.max;
-      importance = Importance.max;
-    } else if (messageType == 'newPromotion' || messageType == 'promocode') {
-      channelId = 'promotional_channel';
-      channelName = 'Promotional Notifications';
-      channelDescription = 'Special offers and promotions';
-      priority = Priority.defaultPriority;
-      importance = Importance.defaultImportance;
-    }
 
     // Show local notification with enhanced details
     flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
+      buildAndroidNotificationId(message),
       notification.title ?? 'Rolling Sushi',
       notification.body ?? 'You have a new notification',
       NotificationDetails(
@@ -845,6 +877,7 @@ void handleForegroundMessage(RemoteMessage message) {
           importance: importance,
           playSound: true,
           enableVibration: true,
+          onlyAlertOnce: false,
           showWhen: true,
           when: DateTime.now().millisecondsSinceEpoch,
           // Add action buttons for certain message types
@@ -1195,10 +1228,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             useMaterial3: true,
             fontFamily: 'SF Pro Display',
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xff004032),
-              foregroundColor: Colors.white,
+              backgroundColor: cWhite,        // ✅ Changed from Color(0xff004032)
+              foregroundColor: Color(0xff004032),   // ✅ Changed from Colors.white
               elevation: 0,
+              iconTheme: IconThemeData(
+                color: Color(0xff004032),           // ✅ Added green icons
+              ),
+            titleTextStyle: TextStyle(
+              color: Color(0xff004032),           // ✅ Added green title
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'SF Pro Display',
             ),
+          ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xff004032),

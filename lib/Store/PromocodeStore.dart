@@ -556,6 +556,15 @@ class PromocodeStore extends GetxController {
 
   void validatePromocodeOnCartChange() {
     if (activePromocode.value != null && !isProcessing.value) {
+      // If cart is empty, remove any active promocode immediately
+      try {
+        if (Order.getOrderLength() == 0) {
+          print('Cart is empty, removing active promocode');
+          handleRemovePromo();
+          return;
+        }
+      } catch (_) {}
+
       print('Validating promocode on cart change');
       _validateCurrentPromocode();
     }

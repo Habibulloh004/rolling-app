@@ -141,7 +141,15 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
       }
 
       // Apply promocode based on type
-      await applyPromocode(promocode);
+      final bool applied = await applyPromocode(promocode);
+
+      if (!applied) {
+        // Application failed (e.g., not birthday / not first order)
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
 
       setState(() {
         isLoading = false;
@@ -230,7 +238,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
 
   // Fix for lib/Screens/Promocode/PromocodeDialog.dart
 
-  Future<void> applyPromocode(Promocode promocode) async {
+  Future<bool> applyPromocode(Promocode promocode) async {
     switch (promocode.params?.resultType) {
       case 1: // Bonus products
         final bonusProductIds = promocode.params?.bonusProducts ?? [];
@@ -264,7 +272,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           }
         }
         promocodeStore.setPromocode(promocode);
-        break;
+        return true;
 
       case 2: // Fixed discount
         final discount = ((promocode.params?.discountValue ?? 0) / 100).toDouble();
@@ -274,7 +282,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
         setState(() {
           promotionPrice = discount;
         });
-        break;
+        return true;
 
       case 3: // Percentage discount
         final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
@@ -288,7 +296,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
             setState(() {
               errorMessage = LocaleData.promocodeValidOnlyOnBirthday.getString(context);
             });
-            return;
+            return false;
           }
         }
 
@@ -298,7 +306,7 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
             setState(() {
               errorMessage = LocaleData.promocodeValidOnlyForFirstOrder.getString(context);
             });
-            return;
+            return false;
           }
         }
 
@@ -308,8 +316,14 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
         setState(() {
           promotionDiscount = discountPercent;
         });
-        break;
+        return true;
     }
+
+    // Unknown result type
+    setState(() {
+      errorMessage = LocaleData.errorApplyingPromocode.getString(context);
+    });
+    return false;
   }
 
   Future<bool> checkBirthday() async {

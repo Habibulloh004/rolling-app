@@ -85,7 +85,10 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                       ),
                                       ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            elevation: 0.0, // No elevation
+                                            elevation: 0.0,
+                                            surfaceTintColor: Colors.white,
+                                            backgroundColor:
+                                                Theme.of(context).cardColor,
                                           ),
                                           onPressed: () async {
                                             _flutterLocalization
@@ -132,7 +135,9 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                           )),
                                       ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            elevation: 0.0, // No elevation
+                                            elevation: 0.0,
+                                            backgroundColor:
+                                                Theme.of(context).cardColor,
                                           ),
                                           onPressed: () async {
                                             _flutterLocalization
@@ -179,7 +184,9 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                           )),
                                       ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            elevation: 0.0, // No elevation
+                                            elevation: 0.0,
+                                            backgroundColor:
+                                                Theme.of(context).cardColor,
                                           ),
                                           onPressed: () async {
                                             _flutterLocalization

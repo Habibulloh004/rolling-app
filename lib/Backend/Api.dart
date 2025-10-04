@@ -758,26 +758,48 @@ class Api {
   static Future<bool> isRestaurantOpen() async {
     bool allowed = false;
     try {
-      final response =
-      await dio.get("https://sushiserver.onrender.com/get_time");
+      final response = await dio.get("https://sushiserver.onrender.com/get_time");
 
-      List<String> closeParts = response.data['closed_time'].split(':');
-      int closingHour = int.parse(closeParts[0]);
+      final String closedTimeStr = (response.data['closed_time'] ?? '').toString().trim();
+      final String openedTimeStr = (response.data['opened_time'] ?? '').toString().trim();
 
-      List<String> openParts = response.data['opened_time'].split(':');
-      int openHour = int.parse(openParts[0]);
+      if (openedTimeStr.isEmpty || closedTimeStr.isEmpty) {
+        return false;
+      }
 
-      int currentHour = DateTime.now().hour;
+      // Parse HH:mm safely
+      final List<String> openParts = openedTimeStr.split(':');
+      final List<String> closeParts = closedTimeStr.split(':');
 
-      if (currentHour >= openHour && currentHour < closingHour) {
-        allowed = true;
+      final int openHour = int.parse(openParts[0]);
+      final int openMinute = openParts.length > 1 ? int.parse(openParts[1]) : 0;
+      final int closeHour = int.parse(closeParts[0]);
+      final int closeMinute = closeParts.length > 1 ? int.parse(closeParts[1]) : 0;
+
+      final int openTotal = openHour * 60 + openMinute;
+      final int closeTotal = closeHour * 60 + closeMinute;
+
+      final DateTime now = DateTime.now();
+      final int currentTotal = now.hour * 60 + now.minute;
+
+      if (openTotal == closeTotal) {
+        // Interpret as 24 hours open
+        return true;
+      }
+
+      if (openTotal < closeTotal) {
+        // Same-day window: open <= now < close
+        allowed = currentTotal >= openTotal && currentTotal < closeTotal;
+      } else {
+        // Overnight window (wraps past midnight): now >= open OR now < close
+        allowed = currentTotal >= openTotal || currentTotal < closeTotal;
       }
 
       return allowed;
     } catch (e) {
       print(e);
+      return false;
     }
-    return allowed;
   }
 
   static Future<int> getDeliveryPrice() async {
