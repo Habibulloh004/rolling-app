@@ -61,7 +61,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       children: [
                         IconButton(
                             onPressed: () {
-                              Get.back();
+                              try {
+                                if (Get.isSnackbarOpen) {
+                                  Get.closeCurrentSnackbar();
+                                }
+                              } catch (_) {}
+                              Navigator.of(context).maybePop();
                             },
                             icon: Icon(
                               Icons.navigate_before,
@@ -501,7 +506,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
               children: [
                 IconButton(
                     onPressed: () {
-                      Get.back();
+                      try {
+                        if (Get.isSnackbarOpen) {
+                          Get.closeCurrentSnackbar();
+                        }
+                      } catch (_) {}
+                      Navigator.of(context).maybePop();
                     },
                     icon: Icon(
                       Icons.navigate_before,

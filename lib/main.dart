@@ -27,7 +27,7 @@ import 'Store/PromocodeStore.dart'; // 192.168.1.41
 import 'firebase_options.dart';
 
 // Configuration - Replace with your actual server URL
-const String SERVER_URL = 'http://192.168.1.41:3000'; // Change this to your production URL
+const String SERVER_URL = 'https://sushiserver.onrender.com'; // Change this to your production URL
 
 // Global notification plugin instance
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -1353,7 +1353,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff004032),
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1369,19 +1369,7 @@ class SplashScreen extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 20.h),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-            SizedBox(height: 20.h),
-            Text(
-              'Loading...',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            
           ],
         ),
       ),

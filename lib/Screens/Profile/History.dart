@@ -21,12 +21,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    void safeBack() {
+      try {
+        if (Get.isSnackbarOpen) {
+          Get.closeCurrentSnackbar();
+        }
+      } catch (_) {}
+      Navigator.of(context).maybePop();
+    }
     return Scaffold(
       appBar: AppBar(
         leading: cGoBack(
-          onPressed: () {
-            Get.back();
-          },
+          onPressed: safeBack,
           color: cDarkGreen,
         ),
         title: Text("${LocaleData.historyoforders.getString(context)}",

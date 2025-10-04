@@ -103,7 +103,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         leading: cGoBack(
           onPressed: () {
-            Get.back();
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           color: cDarkGreen,
         ),

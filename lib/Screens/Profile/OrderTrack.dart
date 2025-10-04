@@ -41,7 +41,12 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
       appBar: AppBar(
         leading: cGoBack(
           onPressed: () {
-            Get.back();
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           color: cDarkGreen,
         ),

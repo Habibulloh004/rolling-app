@@ -9,7 +9,7 @@ import '../../Consts/Colors.dart';
 import '../../Consts/Functions.dart';
 import '../../LocalMemory/Language.dart';
 import '../../LocalMemory/User.dart';
-import '../Dicount/Discount.dart';
+// import '../Dicount/Discount.dart';
 import '../Menu/Menu.dart';
 
 class LanguageScreen extends StatefulWidget {
@@ -99,8 +99,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
                                             if (User.isUserExistsStrict()) {
                                               Language.setLanguage('ru');
-                                              Get.offAll(
-                                                  () => DiscountScreen());
+                                              Get.offAll(() => MenuScreen());
                                             } else if (!subscribed) {
                                               Language.setLanguage('en');
                                               Get.offAll(() => MenuScreen());
@@ -148,8 +147,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
                                             if (User.isUserExistsStrict()) {
                                               Language.setLanguage('en');
-                                              Get.offAll(
-                                                  () => DiscountScreen());
+                                              Get.offAll(() => MenuScreen());
                                             } else if (!subscribed) {
                                               Language.setLanguage('en');
                                               Get.offAll(() => MenuScreen());
@@ -197,8 +195,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
                                             if (User.isUserExistsStrict()) {
                                               Language.setLanguage('uz');
-                                              Get.offAll(
-                                                  () => DiscountScreen());
+                                              Get.offAll(() => MenuScreen());
                                             } else if (!subscribed) {
                                               Language.setLanguage('en');
                                               Get.offAll(() => MenuScreen());

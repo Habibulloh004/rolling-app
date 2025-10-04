@@ -187,10 +187,15 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
           title: Text("${LocaleData.basket.getString(context)}"),
           leading: IconButton(
               onPressed: () {
-                Get.to(() => MenuScreen());
+                try {
+                  if (Get.isSnackbarOpen) {
+                    Get.closeCurrentSnackbar();
+                  }
+                } catch (_) {}
                 if (Bonus.isBonusExists()) {
                   Bonus.clean();
                 }
+                Navigator.of(context).maybePop();
               },
               icon: Icon(
                 Icons.navigate_before,

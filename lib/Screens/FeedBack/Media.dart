@@ -28,7 +28,12 @@ class _MediaScreenState extends State<MediaScreen> {
         title: cAppBarTittle(text: 'Обратная связь'),
         leading: IconButton(
             onPressed: () {
-              Get.back();
+              try {
+                if (Get.isSnackbarOpen) {
+                  Get.closeCurrentSnackbar();
+                }
+              } catch (_) {}
+              Navigator.of(context).maybePop();
             },
             icon: Icon(
               Icons.navigate_before,

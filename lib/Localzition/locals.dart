@@ -110,6 +110,7 @@ mixin LocaleData {
   static const String ready = "ready";
   static const String sex = "sex";
   static const String cooldown = "cooldown";
+  static const String news = "news";
 
   // Gender translations
   static const String male = "male";
@@ -250,6 +251,7 @@ mixin LocaleData {
     ready: "Ready",
     sex: "Gender",
     cooldown: "Change limit reached",
+    news: "News",
 
     // Gender translations
     male: "Male",
@@ -391,6 +393,7 @@ mixin LocaleData {
     ready: "Готов",
     sex: "Пол",
     cooldown: "Лимит изменений достигнут",
+    news: "Новости",
 
     // Gender translations
     male: "Мужчина",
@@ -532,6 +535,7 @@ mixin LocaleData {
     ready: 'Tayyor',
     sex: "Jins",
     cooldown: "O'zgartirish chegarasi yetdi",
+    news: "Yangiliklar",
 
     // Gender translations
     male: "Erkak",

@@ -238,7 +238,12 @@ class BonusScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            Get.back();
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           icon: Icon(
             Icons.navigate_before,

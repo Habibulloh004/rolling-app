@@ -154,7 +154,12 @@ class _MapScreenState extends State<MapScreen> {
         ),
         leading: IconButton(
           onPressed: () {
-            Get.back();
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           icon: const Icon(
             Icons.navigate_before,
@@ -162,15 +167,6 @@ class _MapScreenState extends State<MapScreen> {
             size: 30,
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: "current_location",
-        onPressed: () {
-          _fetchCurrentLocation();
-        },
-        backgroundColor: Colors.white,
-        elevation: 4,
-        child: const Icon(Icons.my_location, color: cDarkGreen),
       ),
       body: Stack(
         children: [
@@ -231,26 +227,34 @@ class _MapScreenState extends State<MapScreen> {
               ],
             )
           ),
-          // Confirm button
+          // Confirm bar + locate button (beautified)
           Positioned(
-            bottom: size.height * 0.05,
-            left: size.width * 0.1,
-            child: Container(
-              width: size.width * 0.8,
-              height: size.height * 0.07,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: cDarkGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  disabledBackgroundColor: Colors.grey[400],
-                ),
-                onPressed: isLoadingAddress 
-                    ? null 
-                    : () {
+            left: 16,
+            right: 16,
+            bottom: 24,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Confirm bar
+                Expanded(
+                  child: Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: cDarkGreen,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: isLoadingAddress
+                          ? null
+                          : () {
                   // Allow confirmation as long as we're not loading and have address info
                   if (!isLoadingAddress && addressDetail != "Map Page" && 
                       !addressDetail.contains("...resolving")) {
@@ -288,45 +292,73 @@ class _MapScreenState extends State<MapScreen> {
                       Get.back();
                     }
                   }
-                },
-                child: isLoadingAddress 
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            "Loading...",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            "${LocaleData.confirm.getString(context)}",
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                        },
+                      child: Center(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isLoadingAddress
+                              ? Row(
+                                  key: const ValueKey('loading_row'),
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      '...',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    )
+                                  ],
+                                )
+                              : Row(
+                                  key: const ValueKey('confirm_row'),
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.check, size: 20, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      LocaleData.confirm.getString(context),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                       ),
-              ),
-            )
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Locate me circular button
+                Material(
+                  color: Colors.white,
+                  elevation: 6,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _fetchCurrentLocation,
+                    child: const SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Icon(Icons.my_location, color: cDarkGreen),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           )
         ],
       ),

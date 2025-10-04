@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_localization/flutter_localization.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../Backend/Api.dart';
+import '../../Consts/Colors.dart';
+import '../../Localzition/locals.dart';
 import '../../LocalMemory/Language.dart';
 import 'NewsScreen.dart';
 
@@ -22,8 +25,27 @@ class _MailingListScreenState extends State<MailingListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    void safeBack() {
+      // Safely close any open snackbar without crashing, then navigate back
+      try {
+        if (Get.isSnackbarOpen) {
+          Get.closeCurrentSnackbar();
+        }
+      } catch (_) {}
+      Navigator.of(context).maybePop();
+    }
     return Scaffold(
-      appBar: AppBar(title: Text('News')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(
+            Icons.navigate_before,
+            size: 30,
+            color: cDarkGreen,
+          ),
+          onPressed: safeBack,
+        ),
+        title: Text(LocaleData.news.getString(context)),
+      ),
       body: FutureBuilder<List>(
         future: _newsFuture,
         builder: (context, snapshot) {

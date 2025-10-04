@@ -33,7 +33,12 @@ class _ResturansScreenState extends State<ResturansScreen> {
         backgroundColor: cDarkGreen,
         leading: cGoBack(
           onPressed: () {
-            Get.back();
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           color: cWhite,
         ),

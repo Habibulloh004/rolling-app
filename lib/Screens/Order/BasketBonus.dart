@@ -33,7 +33,12 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
       appBar: AppBar(
         leading: cGoBack(
           onPressed: () {
-            Get.offAll(() => MenuScreen());
+            try {
+              if (Get.isSnackbarOpen) {
+                Get.closeCurrentSnackbar();
+              }
+            } catch (_) {}
+            Navigator.of(context).maybePop();
           },
           color: cDarkGreen,
         ),
