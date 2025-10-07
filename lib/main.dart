@@ -27,6 +27,7 @@ import 'Store/PromocodeStore.dart'; // 192.168.1.41
 import 'firebase_options.dart';
 
 // Configuration - Replace with your actual server URL
+// const String SERVER_URL = 'http://192.168.1.41:3000'; // Change this to your production URL
 const String SERVER_URL = 'https://sushiserver.onrender.com'; // Change this to your production URL
 
 // Global notification plugin instance
@@ -1167,12 +1168,14 @@ class GlobalSafeAreaWrapper extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final bottomPadding = mediaQuery.padding.bottom;
     
-    return Padding(
+    return Container(
+      color: cDarkGreen, // 🟢 Safe area color
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: child,
     );
   }
 }
+
 
 class MyApp extends StatefulWidget {
   final FlutterLocalization localization;
