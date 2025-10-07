@@ -23,30 +23,26 @@ import 'Localzition/locals.dart';
 import 'Notification/notification_funtions.dart';
 import 'Screens/Menu/Menu.dart';
 import 'Screens/Profile/Language.dart';
-import 'Store/PromocodeStore.dart'; // 192.168.1.41
+import 'Store/PromocodeStore.dart';
 import 'firebase_options.dart';
 
-// Configuration - Replace with your actual server URL
-// const String SERVER_URL = 'http://192.168.1.41:3000'; // Change this to your production URL
-const String SERVER_URL = 'https://sushiserver.onrender.com'; // Change this to your production URL
+// const String SERVER_URL = 'http://192.168.1.41:3000';
+const String SERVER_URL = 'https://sushiserver.onrender.com';
 
-// Global notification plugin instance
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-// Build a stable, unique notification ID for Android to prevent
-// unintended replacements or cancellations when multiple notifications arrive.
+// Track if messaging has been initialized
+bool _messagingInitialized = false;
+
 int buildAndroidNotificationId(RemoteMessage message) {
   final base = message.messageId ??
       '${message.sentTime?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch}-${message.data.hashCode}';
-  // Ensure 32-bit positive int
   return base.hashCode & 0x7fffffff;
 }
 
-// Background message handler for Firebase
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Ensure Firebase is initialized in background
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -62,9 +58,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     return;
   }
 
-  // On iOS, APNs will present notifications when the app is in background
-  // if the message contains a notification payload. Showing a local
-  // notification as well would cause a duplicate. Skip local show on iOS.
   if (Platform.isIOS) {
     print('ℹ️ iOS background: letting system/APNs present notification; skipping local show.');
     return;
@@ -73,7 +66,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("📱 Notification Title: ${notification.title}");
   print("📱 Notification Body: ${notification.body}");
 
-  // Ensure alerts channel exists for Android background isolate
   if (Platform.isAndroid) {
     const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
       'alerts_channel',
@@ -92,12 +84,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         ?.createNotificationChannel(alertsChannel);
   }
 
-  // Always alert on Android using alerts channel
   String channelId = 'alerts_channel';
   Priority priority = Priority.max;
   Importance importance = Importance.max;
 
-  // Show notification for ALL types (Android only; iOS is skipped above)
   await flutterLocalNotificationsPlugin.show(
     buildAndroidNotificationId(message),
     notification.title ?? 'Rolling Sushi',
@@ -136,21 +126,24 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("✅ Background notification displayed successfully");
 }
 
+// ============================================================================
+// MAIN - MINIMAL INITIALIZATION ONLY
+// ============================================================================
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase FIRST
+  // STEP 1: Initialize Firebase (required for background messages)
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Set background handler IMMEDIATELY after Firebase init
+  // STEP 2: Set background handler (required for background messages)
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Then initialize local notifications
+  // STEP 3: Initialize local notifications infrastructure only
   await initializeLocalNotifications();
 
-  // Initialize other components
+  // STEP 4: Initialize other essential components
   final FlutterLocalization localization = FlutterLocalization.instance;
   await localization.ensureInitialized();
   
@@ -165,27 +158,72 @@ void main() async {
   DependencyInjection.init();
   initializeControllers();
 
-  // Request permissions and setup messaging
-  await requestNotificationPermissions();
-  await setupFirebaseMessaging();
-  await subscribeToTopics();
+  // ⚠️ DO NOT REQUEST PERMISSIONS OR SETUP MESSAGING HERE
+  // These will be called AFTER user interacts with the UI
 
+  print('✅ App initialized - UI ready to show');
+  
   runApp(MyApp(localization: localization));
 }
 
-// FIXED: Proper Hive box initialization
+// ============================================================================
+// DELAYED MESSAGING INITIALIZATION - Call this AFTER UI interaction
+// ============================================================================
+Future<void> initializeMessagingAfterUserInteraction() async {
+  if (_messagingInitialized) {
+    print('ℹ️ Messaging already initialized, skipping');
+    return;
+  }
+
+  try {
+    print('🚀 Starting messaging initialization after user interaction...');
+
+    // STEP 1: Request permissions
+    await requestNotificationPermissions();
+
+    // STEP 2: Setup Firebase Messaging
+    await setupFirebaseMessaging();
+
+    // STEP 3: Subscribe to topics
+    await subscribeToTopics();
+
+    _messagingInitialized = true;
+    print('✅ Messaging initialization completed successfully');
+
+    // Save initialization status
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('messaging_initialized', true);
+    await prefs.setInt('messaging_initialized_at', DateTime.now().millisecondsSinceEpoch);
+
+  } catch (e) {
+    print('❌ Error during messaging initialization: $e');
+    // Don't block the app - user can still use it without notifications
+  }
+}
+
+// Check if messaging was previously initialized
+Future<bool> wasMessagingInitialized() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('messaging_initialized') ?? false;
+  } catch (e) {
+    print('❌ Error checking messaging initialization status: $e');
+    return false;
+  }
+}
+
+// ============================================================================
+// HIVE INITIALIZATION
+// ============================================================================
 Future<void> initializeHiveBoxes() async {
   try {
-    // Open all required boxes
     await Hive.openBox('language');
     await Hive.openBox('mailingList');
     await Hive.openBox('promocodes');
     await Hive.openBox('settings');
-    
     print('✅ All Hive boxes initialized successfully');
   } catch (e) {
     print('❌ Error initializing Hive boxes: $e');
-    // Create fallback boxes or handle error appropriately
     try {
       await Hive.openBox('language');
       await Hive.openBox('mailingList');
@@ -195,17 +233,18 @@ Future<void> initializeHiveBoxes() async {
   }
 }
 
-// Initialize all GetX controllers
 void initializeControllers() {
   Get.put(PromocodeStore(), permanent: true);
 }
 
-// Request notification permissions with detailed handling
+// ============================================================================
+// PERMISSION AND MESSAGING SETUP
+// ============================================================================
 Future<void> requestNotificationPermissions() async {
   try {
+    print('📋 Requesting notification permissions...');
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // iOS-specific: Request provisional authorization first
     if (Platform.isIOS) {
       await messaging.requestPermission(
         alert: true,
@@ -213,27 +252,29 @@ Future<void> requestNotificationPermissions() async {
         badge: true,
         carPlay: false,
         criticalAlert: false,
-        provisional: true, // Enable provisional
+        provisional: true,
         sound: true,
       );
       
-      // For iOS, also request notification permissions
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
         sound: true,
       );
+      print('✅ iOS permissions requested');
     }
-    // Android 13+ runtime notification permission
+
     if (Platform.isAndroid) {
       try {
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>()
             ?.requestNotificationsPermission();
+        print('✅ Android notifications permission requested');
       } catch (e) {
         print('⚠️ Android notifications permission request failed: $e');
       }
+      
       try {
         await messaging.requestPermission();
       } catch (e) {
@@ -241,13 +282,12 @@ Future<void> requestNotificationPermissions() async {
       }
     }
 
-    // Rest of your permission code...
+    print('✅ Notification permissions requested successfully');
   } catch (e) {
     print('❌ Error requesting permissions: $e');
   }
 }
 
-// Initialize local notifications with comprehensive setup
 Future<void> initializeLocalNotifications() async {
   try {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -270,7 +310,6 @@ Future<void> initializeLocalNotifications() async {
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
     );
 
-    // Create notification channels for Android
     await createNotificationChannels();
     
     print('✅ Local notifications initialized successfully');
@@ -279,7 +318,6 @@ Future<void> initializeLocalNotifications() async {
   }
 }
 
-// Create comprehensive notification channels for Android
 Future<void> createNotificationChannels() async {
   if (Platform.isAndroid) {
     final androidPlugin = flutterLocalNotificationsPlugin
@@ -291,7 +329,6 @@ Future<void> createNotificationChannels() async {
       return;
     }
 
-    // High importance channel for urgent notifications
     const AndroidNotificationChannel highImportanceChannel =
         AndroidNotificationChannel(
       'high_importance_channel',
@@ -305,7 +342,6 @@ Future<void> createNotificationChannels() async {
       ledColor: Color(0xff004032),
     );
 
-    // Alerts channel: always heads-up with sound for all app notifications
     const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
       'alerts_channel',
       'Alerts',
@@ -318,7 +354,6 @@ Future<void> createNotificationChannels() async {
       ledColor: Color(0xff004032),
     );
 
-    // General channel for regular notifications
     const AndroidNotificationChannel generalChannel =
         AndroidNotificationChannel(
       'general_channel',
@@ -330,7 +365,6 @@ Future<void> createNotificationChannels() async {
       showBadge: true,
     );
 
-    // Promotional channel for offers and promotions
     const AndroidNotificationChannel promotionalChannel =
         AndroidNotificationChannel(
       'promotional_channel',
@@ -350,7 +384,6 @@ Future<void> createNotificationChannels() async {
   }
 }
 
-// Enhanced notification response handling
 void onDidReceiveNotificationResponse(NotificationResponse response) async {
   print('📱 Notification response received');
   print('📊 Action ID: ${response.actionId}');
@@ -361,7 +394,6 @@ void onDidReceiveNotificationResponse(NotificationResponse response) async {
       final payloadData = json.decode(response.payload!);
       final messageData = payloadData['data'] as Map<String, dynamic>? ?? {};
       
-      // Handle different action types
       switch (response.actionId) {
         case 'view_order':
           _handleOrderAction(messageData);
@@ -373,34 +405,27 @@ void onDidReceiveNotificationResponse(NotificationResponse response) async {
           print('📱 Notification dismissed');
           break;
         default:
-          // Default tap action
           handleNotificationTap(response.payload);
       }
     }
   } catch (e) {
     print('❌ Error processing notification response: $e');
-    // Fallback to default handling
     handleNotificationTap(response.payload);
   }
 }
 
-// Handle order-related notification actions
 void _handleOrderAction(Map<String, dynamic> data) {
   print('🍱 Handling order action');
   
   final orderId = data['order_id'];
   if (orderId != null) {
-    // Navigate to order tracking screen
-    // Get.to(() => OrderTrackingScreen(orderId: orderId));
     print('🎯 Would navigate to order: $orderId');
   } else {
-    // Navigate to general orders screen or menu
     Get.offAll(() => MenuScreen());
     print('🎯 Navigated to menu screen');
   }
 }
 
-// Handle promocode-related notification actions
 void _handlePromocodeAction(Map<String, dynamic> data) {
   print('🎁 Handling promocode action');
   
@@ -409,11 +434,8 @@ void _handlePromocodeAction(Map<String, dynamic> data) {
     
     final promocodeId = data['promocode_id'];
     if (promocodeId != null) {
-      // Navigate to specific promocode
       print('🎯 Would navigate to promocode: $promocodeId');
-      // Get.to(() => PromocodeDetailScreen(promocodeId: promocodeId));
     } else {
-      // Navigate to general menu or promocodes section
       Get.offAll(() => MenuScreen());
       print('🎯 Navigated to menu screen');
     }
@@ -423,20 +445,21 @@ void _handlePromocodeAction(Map<String, dynamic> data) {
   }
 }
 
-// FIXED: Send token to server with proper error handling and fallbacks
+// ============================================================================
+// TOKEN MANAGEMENT
+// ============================================================================
 Future<void> sendTokenToServer(String token) async {
   try {
-    // Get current language with safe fallback
     String language;
     try {
       language = Language.isLanguageAvailable() ? Language.getLanguage() : 'ru';
     } catch (e) {
       print('⚠️ Error getting language, using default: $e');
-      language = 'ru'; // Safe fallback
+      language = 'ru';
     }
     
     print('📤 Registering token with server...');
-    print('🔑 Token: ${token}');
+    print('🔑 Token: ${token.substring(0, 20)}...');
     print('🌍 Language: $language');
     
     final response = await http.post(
@@ -448,7 +471,7 @@ Future<void> sendTokenToServer(String token) async {
       body: json.encode({
         'deviceToken': token,
         'language': language,
-        'userId': null, // Add user ID if available from your app
+        'userId': null,
       }),
     ).timeout(const Duration(seconds: 30));
     
@@ -464,16 +487,13 @@ Future<void> sendTokenToServer(String token) async {
     } else {
       print('❌ Failed to register token: ${response.statusCode}');
       print('📝 Response: ${response.body}');
-      
-      // Try fallback to legacy endpoint
       await _sendTokenToServerLegacy(token, language);
     }
   } catch (e) {
     print('❌ Error sending token to server: $e');
     
-    // Try fallback to legacy endpoint
     try {
-      String language = 'ru'; // Safe fallback language
+      String language = 'ru';
       try {
         language = Language.isLanguageAvailable() ? Language.getLanguage() : 'ru';
       } catch (langError) {
@@ -486,7 +506,6 @@ Future<void> sendTokenToServer(String token) async {
   }
 }
 
-// Fallback to legacy subscribe endpoint
 Future<void> _sendTokenToServerLegacy(String token, String language) async {
   try {
     print('🔄 Trying legacy endpoint...');
@@ -510,7 +529,6 @@ Future<void> _sendTokenToServerLegacy(String token, String language) async {
   }
 }
 
-// Update token language on server with safe language handling
 Future<void> updateTokenLanguage(String token, String newLanguage) async {
   try {
     print('🔄 Updating token language to: $newLanguage');
@@ -540,7 +558,6 @@ Future<void> updateTokenLanguage(String token, String newLanguage) async {
   }
 }
 
-// Unregister token from server
 Future<void> unregisterTokenFromServer(String token) async {
   try {
     print('🗑️ Unregistering token from server...');
@@ -566,14 +583,10 @@ Future<void> unregisterTokenFromServer(String token) async {
   }
 }
 
-// Enhanced Firebase Messaging setup with retry mechanisms
 Future<void> setupFirebaseMessaging() async {
   try {
-    // Background message handler is registered in main(); avoid duplicate registration here
-
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Get FCM token with retry mechanism
     String? fcmToken;
     int retryCount = 0;
     const maxRetries = 3;
@@ -582,7 +595,7 @@ Future<void> setupFirebaseMessaging() async {
       try {
         fcmToken = await messaging.getToken();
         if (fcmToken != null) {
-          print('🔑 FCM Token obtained: ${fcmToken}');
+          print('🔑 FCM Token obtained: ${fcmToken.substring(0, 20)}...');
           break;
         }
       } catch (e) {
@@ -595,10 +608,8 @@ Future<void> setupFirebaseMessaging() async {
     }
 
     if (fcmToken != null) {
-      // Send token to server
       await sendTokenToServer(fcmToken);
       
-      // Store token locally for future use
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', fcmToken);
       await prefs.setInt('token_registered_at', DateTime.now().millisecondsSinceEpoch);
@@ -606,24 +617,19 @@ Future<void> setupFirebaseMessaging() async {
       print('❌ Failed to obtain FCM token after $maxRetries attempts');
     }
 
-    // Listen to token refresh with improved handling
     messaging.onTokenRefresh.listen((newToken) async {
       print('🔄 FCM Token refreshed: ${newToken.substring(0, 20)}...');
       
       try {
-        // Get old token from storage
         final prefs = await SharedPreferences.getInstance();
         final oldToken = prefs.getString('fcm_token');
         
         if (oldToken != null && oldToken != newToken) {
-          // Unregister old token
           await unregisterTokenFromServer(oldToken);
         }
         
-        // Register new token
         await sendTokenToServer(newToken);
         
-        // Update stored token
         await prefs.setString('fcm_token', newToken);
         await prefs.setInt('token_registered_at', DateTime.now().millisecondsSinceEpoch);
         
@@ -633,23 +639,19 @@ Future<void> setupFirebaseMessaging() async {
       }
     });
 
-    // Handle initial message (when app is opened from notification)
     RemoteMessage? initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
       print('🚀 App opened from notification');
-      // Delay to ensure app is fully loaded
       await Future.delayed(const Duration(milliseconds: 1500));
       handleInitialMessage(initialMessage);
     }
 
-    // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📱 Foreground message received');
       print('📊 Data: ${message.data}');
       handleForegroundMessage(message);
     });
 
-    // Handle message when app is opened from background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('📱 App opened from background notification');
       print('📊 Data: ${message.data}');
@@ -662,12 +664,10 @@ Future<void> setupFirebaseMessaging() async {
   }
 }
 
-// FIXED: Enhanced subscribe to topics with comprehensive error handling
 Future<void> subscribeToTopics() async {
   try {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Get current token
     final prefs = await SharedPreferences.getInstance();
     final currentToken = prefs.getString('fcm_token');
     
@@ -676,32 +676,27 @@ Future<void> subscribeToTopics() async {
       return;
     }
 
-    // Subscribe to general topic
     await messaging.subscribeToTopic('all_users');
     print('✅ Subscribed to topic: all_users');
 
-    // Subscribe to language-specific topic with safe language handling
     String language;
     try {
       language = Language.isLanguageAvailable() ? Language.getLanguage() : 'ru';
       print('🌍 Current language for topic: $language');
     } catch (e) {
       print('⚠️ Error getting language for topic subscription, using default: $e');
-      language = 'ru'; // Safe fallback
+      language = 'ru';
     }
     
     await messaging.subscribeToTopic('all_users_$language');
     print('✅ Subscribed to topic: all_users_$language');
     
-    // Also make sure server has the latest language (but don't fail if it doesn't work)
     try {
       await updateTokenLanguage(currentToken, language);
     } catch (e) {
       print('⚠️ Warning: Could not update token language on server: $e');
-      // Continue anyway - this is not critical for app functionality
     }
     
-    // Store subscription info
     await prefs.setInt('last_topic_subscription', DateTime.now().millisecondsSinceEpoch);
     
   } catch (e) {
@@ -709,7 +704,6 @@ Future<void> subscribeToTopics() async {
   }
 }
 
-// Unsubscribe from all topics with comprehensive cleanupba
 Future<void> unsubscribeFromAllTopics() async {
   try {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -729,7 +723,6 @@ Future<void> unsubscribeFromAllTopics() async {
       }
     }
     
-    // Clear subscription info
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('last_topic_subscription');
     
@@ -738,12 +731,10 @@ Future<void> unsubscribeFromAllTopics() async {
   }
 }
 
-// Function to call when language changes in the app
 Future<void> onLanguageChanged(String newLanguage) async {
   try {
     print('🌍 Language changed to: $newLanguage');
     
-    // Get current token
     final prefs = await SharedPreferences.getInstance();
     final currentToken = prefs.getString('fcm_token');
     
@@ -752,14 +743,12 @@ Future<void> onLanguageChanged(String newLanguage) async {
       return;
     }
     
-    // Update language on server (but don't fail if it doesn't work)
     try {
       await updateTokenLanguage(currentToken, newLanguage);
     } catch (e) {
       print('⚠️ Warning: Could not update language on server: $e');
     }
     
-    // Re-subscribe to topics with new language
     await subscribeToTopics();
     
     print('✅ Language change completed successfully');
@@ -768,12 +757,13 @@ Future<void> onLanguageChanged(String newLanguage) async {
   }
 }
 
-// Handle initial message with improved routing and error handling
+// ============================================================================
+// MESSAGE HANDLERS
+// ============================================================================
 void handleInitialMessage(RemoteMessage message) {
   print('🚀 Initial message data: ${message.data}');
 
   try {
-    // Wait for app to be ready before navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final messageType = message.data['type'] ?? message.data['messageType'];
       
@@ -782,8 +772,6 @@ void handleInitialMessage(RemoteMessage message) {
         case 'orderReady':
           final orderId = message.data['order_id'];
           if (orderId != null) {
-            // Navigate to order tracking screen
-            // Get.to(() => OrderTrackingScreen(orderId: orderId));
             print('🎯 Would navigate to order tracking: $orderId');
           } else {
             Get.offAll(() => MenuScreen());
@@ -794,8 +782,6 @@ void handleInitialMessage(RemoteMessage message) {
         case 'newPromotion':
           final promocodeId = message.data['promocode_id'];
           if (promocodeId != null) {
-            // Navigate to specific promocode
-            // Get.to(() => PromocodeDetailScreen(promocodeId: promocodeId));
             print('🎯 Would navigate to promocode: $promocodeId');
           } else {
             Get.offAll(() => MenuScreen());
@@ -804,37 +790,24 @@ void handleInitialMessage(RemoteMessage message) {
           
         case 'general':
         default:
-          // Navigate to main menu
           Get.offAll(() => MenuScreen());
           break;
       }
     });
   } catch (e) {
     print('❌ Error handling initial message: $e');
-    // Fallback to menu screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.offAll(() => MenuScreen());
     });
   }
 }
 
-// Enhanced foreground message handling with detailed categorization
 void handleForegroundMessage(RemoteMessage message) {
   print('🔔 === FOREGROUND MESSAGE RECEIVED ===');
   print('🔔 Message ID: ${message.messageId}');
-  print('🔔 From: ${message.from}');
-  print('🔔 Category: ${message.category}');
-  print('🔔 Collapse Key: ${message.collapseKey}');
-  print('🔔 Content Available: ${message.contentAvailable}');
   print('🔔 Data: ${message.data}');
   print('🔔 Notification Title: ${message.notification?.title}');
   print('🔔 Notification Body: ${message.notification?.body}');
-  print('🔔 Sent Time: ${message.sentTime}');
-  print('🔔 Thread ID: ${message.threadId}');
-  print('🔔 TTL: ${message.ttl}');
-  print('📱 Processing foreground message...');
-  print('📊 Message data: ${message.data}');
-  print('📊 Notification: ${message.notification?.title} - ${message.notification?.body}');
 
   RemoteNotification? notification = message.notification;
 
@@ -843,26 +816,20 @@ void handleForegroundMessage(RemoteMessage message) {
     return;
   }
 
-  // On iOS, when foreground presentation options are enabled, the system
-  // will present notifications that include a notification payload. Showing
-  // a local notification here would duplicate it. Let iOS handle it.
   if (Platform.isIOS) {
     print('ℹ️ iOS foreground: system will present notification; skipping local show.');
     return;
   }
 
   try {
-    // Always alert on Android using a dedicated alerts channel
     String channelId = 'alerts_channel';
     String channelName = 'Alerts';
     String channelDescription = 'Always alerts with sound and heads-up for Rolling Sushi.';
     Priority priority = Priority.max;
     Importance importance = Importance.max;
     
-    // Keep messageType for action buttons and payload handling
     final messageType = message.data['messageType'] ?? message.data['type'];
 
-    // Show local notification with enhanced details
     flutterLocalNotificationsPlugin.show(
       buildAndroidNotificationId(message),
       notification.title ?? 'Rolling Sushi',
@@ -881,7 +848,6 @@ void handleForegroundMessage(RemoteMessage message) {
           onlyAlertOnce: false,
           showWhen: true,
           when: DateTime.now().millisecondsSinceEpoch,
-          // Add action buttons for certain message types
           actions: _getNotificationActions(messageType),
           styleInformation: _getNotificationStyle(message),
         ),
@@ -907,7 +873,6 @@ void handleForegroundMessage(RemoteMessage message) {
   }
 }
 
-// Get notification actions based on message type
 List<AndroidNotificationAction>? _getNotificationActions(String? messageType) {
   switch (messageType) {
     case 'orderReady':
@@ -943,10 +908,7 @@ List<AndroidNotificationAction>? _getNotificationActions(String? messageType) {
   }
 }
 
-// Get notification style based on message content - returns StyleInformation?
 StyleInformation? _getNotificationStyle(RemoteMessage message) {
-  // You can customize notification styles here based on message content
-  // For example, big text style for longer messages
   final body = message.notification?.body;
   if (body != null && body.length > 50) {
     return BigTextStyleInformation(
@@ -961,7 +923,6 @@ StyleInformation? _getNotificationStyle(RemoteMessage message) {
   return null;
 }
 
-// Enhanced message handling when app is opened from background
 void handleMessageOpenedApp(RemoteMessage message) {
   print('📱 App opened from background notification');
   print('📊 Message data: ${message.data}');
@@ -974,8 +935,6 @@ void handleMessageOpenedApp(RemoteMessage message) {
       case 'orderReady':
         final orderId = message.data['order_id'];
         if (orderId != null) {
-          // Navigate to order tracking
-          // Get.to(() => OrderTrackingScreen(orderId: orderId));
           print('🎯 Would navigate to order tracking: $orderId');
         } else {
           Get.offAll(() => MenuScreen());
@@ -984,17 +943,13 @@ void handleMessageOpenedApp(RemoteMessage message) {
         
       case 'promocode':
       case 'newPromotion':
-        // Handle promocode notification
         try {
           final promocodeStore = Get.find<PromocodeStore>();
           final promocodeId = message.data['promocode_id'];
           
           if (promocodeId != null) {
-            // Navigate to specific promocode
-            // Get.to(() => PromocodeDetailScreen(promocodeId: promocodeId));
             print('🎯 Would navigate to promocode: $promocodeId');
           } else {
-            // Show promocodes screen or main menu
             Get.offAll(() => MenuScreen());
           }
         } catch (e) {
@@ -1013,7 +968,6 @@ void handleMessageOpenedApp(RemoteMessage message) {
   }
 }
 
-// Enhanced notification tap handling
 void handleNotificationTap(String? payload) {
   if (payload == null) return;
   
@@ -1035,18 +989,18 @@ void handleNotificationTap(String? payload) {
         _handlePromocodeAction(messageData);
         break;
       default:
-        // Default navigation to menu
         Get.offAll(() => MenuScreen());
         break;
     }
   } catch (e) {
     print('❌ Error processing notification tap: $e');
-    // Fallback to menu screen
     Get.offAll(() => MenuScreen());
   }
 }
 
-// App lifecycle handler for token management
+// ============================================================================
+// APP LIFECYCLE HANDLER
+// ============================================================================
 class AppLifecycleHandler extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -1075,14 +1029,12 @@ class AppLifecycleHandler extends WidgetsBindingObserver {
 
   Future<void> _handleAppResumed() async {
     try {
-      // Refresh token if needed
-      await _refreshTokenIfNeeded();
-      
-      // Check topic subscriptions
-      await _checkTopicSubscriptions();
-      
-      // Refresh app data
-      _refreshAppData();
+      // Only refresh if messaging was already initialized
+      if (_messagingInitialized) {
+        await _refreshTokenIfNeeded();
+        await _checkTopicSubscriptions();
+        _refreshAppData();
+      }
     } catch (e) {
       print('❌ Error handling app resumed: $e');
     }
@@ -1094,7 +1046,6 @@ class AppLifecycleHandler extends WidgetsBindingObserver {
       final lastRegistration = prefs.getInt('token_registered_at');
       final now = DateTime.now().millisecondsSinceEpoch;
       
-      // Refresh token if it's been more than 24 hours
       if (lastRegistration == null || (now - lastRegistration) > 24 * 60 * 60 * 1000) {
         print('🔄 Token needs refresh due to age');
         
@@ -1124,7 +1075,6 @@ class AppLifecycleHandler extends WidgetsBindingObserver {
       final lastSubscription = prefs.getInt('last_topic_subscription');
       final now = DateTime.now().millisecondsSinceEpoch;
       
-      // Re-subscribe if it's been more than 7 days
       if (lastSubscription == null || (now - lastSubscription) > 7 * 24 * 60 * 60 * 1000) {
         print('🔄 Re-subscribing to topics due to age');
         await subscribeToTopics();
@@ -1137,7 +1087,6 @@ class AppLifecycleHandler extends WidgetsBindingObserver {
   void _refreshAppData() {
     try {
       final promocodeStore = Get.find<PromocodeStore>();
-      // Refresh promocode data or any other app data
       print('🔄 Refreshing app data');
     } catch (e) {
       print('❌ Error refreshing app data: $e');
@@ -1146,18 +1095,16 @@ class AppLifecycleHandler extends WidgetsBindingObserver {
 
   Future<void> _handleAppDetached() async {
     try {
-      // Perform any necessary cleanup
       print('🧹 Performing app cleanup');
-      
-      // You might want to unregister token or perform other cleanup
-      // depending on your app's requirements
     } catch (e) {
       print('❌ Error during app detach cleanup: $e');
     }
   }
 }
 
-// Global SafeArea wrapper
+// ============================================================================
+// UI COMPONENTS
+// ============================================================================
 class GlobalSafeAreaWrapper extends StatelessWidget {
   final Widget child;
   
@@ -1169,13 +1116,12 @@ class GlobalSafeAreaWrapper extends StatelessWidget {
     final bottomPadding = mediaQuery.padding.bottom;
     
     return Container(
-      color: cDarkGreen, // 🟢 Safe area color
+      color: cDarkGreen,
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: child,
     );
   }
 }
-
 
 class MyApp extends StatefulWidget {
   final FlutterLocalization localization;
@@ -1194,7 +1140,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
-    // Initialize lifecycle handler
     _lifecycleHandler = AppLifecycleHandler();
     WidgetsBinding.instance.addObserver(_lifecycleHandler);
     
@@ -1211,7 +1156,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // Additional app lifecycle handling if needed
   }
 
   @override
@@ -1231,19 +1175,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             useMaterial3: true,
             fontFamily: 'SF Pro Display',
             appBarTheme: const AppBarTheme(
-              backgroundColor: cWhite,        // ✅ Changed from Color(0xff004032)
-              foregroundColor: Color(0xff004032),   // ✅ Changed from Colors.white
+              backgroundColor: cWhite,
+              foregroundColor: Color(0xff004032),
               elevation: 0,
               iconTheme: IconThemeData(
-                color: Color(0xff004032),           // ✅ Added green icons
+                color: Color(0xff004032),
               ),
-            titleTextStyle: TextStyle(
-              color: Color(0xff004032),           // ✅ Added green title
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'SF Pro Display',
+              titleTextStyle: TextStyle(
+                color: Color(0xff004032),
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Display',
+              ),
             ),
-          ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xff004032),
@@ -1284,8 +1228,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void _onTranslatedLanguage(Locale? locale) {
     setState(() {});
     
-    // Handle language change for FCM
-    if (locale != null) {
+    if (locale != null && _messagingInitialized) {
       final languageCode = locale.languageCode;
       if (['en', 'uz', 'ru'].contains(languageCode)) {
         onLanguageChanged(languageCode);
@@ -1321,13 +1264,9 @@ class UpdateWrapper extends StatelessWidget {
             print('❌ Update check error: ${snapshot.error}');
             return const ErrorScreen();
           } else {
-            // FIXED: Safe checking of setup completion
             bool isSetupComplete = false;
             try {
-              // Check if language is available
               final isLanguageSet = Language.isLanguageAvailable();
-              
-              // Check if user is subscribed
               final isUserSubscribed = Maillinglist.isUserSubscribed();
               
               isSetupComplete = isLanguageSet && isUserSubscribed;
@@ -1339,14 +1278,31 @@ class UpdateWrapper extends StatelessWidget {
             }
 
             if (isSetupComplete) {
+              // ✅ User has completed setup - Initialize messaging
+              _initializeMessagingIfNeeded();
               return MenuScreen();
             } else {
+              // ⚠️ User needs to complete setup first
               return LanguageScreen();
             }
           }
         },
       ),
     );
+  }
+
+  // Initialize messaging after user completes setup
+  void _initializeMessagingIfNeeded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Check if already initialized
+      final wasInitialized = await wasMessagingInitialized();
+      if (!wasInitialized && !_messagingInitialized) {
+        print('🚀 User setup complete - initializing messaging now...');
+        await initializeMessagingAfterUserInteraction();
+      } else {
+        print('ℹ️ Messaging already initialized');
+      }
+    });
   }
 }
 
@@ -1372,7 +1328,6 @@ class SplashScreen extends StatelessWidget {
                 },
               ),
             ),
-            
           ],
         ),
       ),
@@ -1477,24 +1432,17 @@ class Update {
   static Future<bool> checkForUpdates() async {
     try {
       print('🔄 Checking for updates...');
-      
-      // Simulate update check delay
       await Future.delayed(const Duration(seconds: 2));
-      
-      // You can implement actual update checking logic here
-      // For example, checking version from your server or app store
-      
       print('✅ Update check completed');
       return true;
     } catch (e) {
       print('❌ Error checking for updates: $e');
-      return true; // Return true to continue app initialization even if update check fails
+      return true;
     }
   }
 
   static Future<bool> isUpdateExist() async {
     try {
-      // Implement your update existence check logic here
       return await checkForUpdates();
     } catch (e) {
       print('❌ Error checking if update exists: $e');
