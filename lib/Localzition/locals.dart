@@ -133,6 +133,7 @@ mixin LocaleData {
   static const String promocodeValidOnlyOnBirthday = "promocodeValidOnlyOnBirthday";
   static const String promocodeValidOnlyForFirstOrder = "promocodeValidOnlyForFirstOrder";
   static const String errorApplyingPromocode = "errorApplyingPromocode";
+  static const String promocodeNotAvailableNow = "promocodeNotAvailableNow";
   static const String success = "success";
   static const String promocodeApplied = "promocodeApplied";
   static const String promocodeRemoved = "promocodeRemoved";
@@ -146,6 +147,12 @@ mixin LocaleData {
   static const String bonusProducts = "bonusProducts";
   static const String discountApplied = "discountApplied";
   static const String promocodeDiscount = "promocodeDiscount";
+  static const String promocodeGuestsOnly = "promocodeGuestsOnly";
+  static const String promocodeGroupRestricted = "promocodeGroupRestricted";
+  static const String bonusProductsUnavailable = "bonusProductsUnavailable";
+  static const String unsupportedPromocodeType = "unsupportedPromocodeType";
+  static const String promotionTime = "promotionTime";
+  static const String otherTime = "otherTime";
 
   static const Map<String, dynamic> EN = {
     category: "Category",
@@ -274,6 +281,7 @@ mixin LocaleData {
     promocodeValidOnlyOnBirthday: "Promocode valid only on birthday",
     promocodeValidOnlyForFirstOrder: "Promocode valid only for first order",
     errorApplyingPromocode: "Error applying promocode",
+    promocodeNotAvailableNow: "Promocode is not available at this time",
     success: "Success",
     promocodeApplied: "Promocode applied",
     promocodeRemoved: "Promocode removed",
@@ -287,6 +295,14 @@ mixin LocaleData {
     bonusProducts: "Bonus Products",
     discountApplied: "Discount Applied",
     promocodeDiscount: "Promocode Discount",
+    promocodeGuestsOnly: "This promocode is available only for guests",
+    promocodeGroupRestricted:
+        "This promocode is limited to specific client groups",
+    bonusProductsUnavailable:
+        "Bonus products are not available for this promocode",
+    unsupportedPromocodeType: "This type of promocode is not supported",
+    promotionTime: "Promotion time",
+    otherTime: "Other time",
   };
 
   static const Map<String, dynamic> RU = {
@@ -416,6 +432,7 @@ mixin LocaleData {
     promocodeValidOnlyOnBirthday: "Промокод действителен только в день рождения",
     promocodeValidOnlyForFirstOrder: "Промокод действителен только для первого заказа",
     errorApplyingPromocode: "Произошла ошибка при применении промокода",
+    promocodeNotAvailableNow: "Промокод недоступен в это время",
     success: "Успешно",
     promocodeApplied: "Промокод применен",
     promocodeRemoved: "Промокод удален",
@@ -429,6 +446,14 @@ mixin LocaleData {
     bonusProducts: "Бонусные продукты",
     discountApplied: "Скидка применена",
     promocodeDiscount: "Скидка по промокоду",
+    promocodeGuestsOnly: "Этот промокод доступен только гостям",
+    promocodeGroupRestricted:
+        "Этот промокод доступен только определенным группам клиентов",
+    bonusProductsUnavailable:
+        "Для этого промокода бонусные товары недоступны",
+    unsupportedPromocodeType: "Этот тип промокода не поддерживается",
+    promotionTime: "Время акции",
+    otherTime: "Остальное время",
   };
 
   static const Map<String, dynamic> UZ = {
@@ -558,6 +583,7 @@ mixin LocaleData {
     promocodeValidOnlyOnBirthday: "Promokod faqat tug'ilgan kunda amal qiladi",
     promocodeValidOnlyForFirstOrder: "Promokod faqat birinchi buyurtma uchun amal qiladi",
     errorApplyingPromocode: "Promokodni qo'llashda xato",
+    promocodeNotAvailableNow: "Promokod hozir amal qilmaydi",
     success: "Muvaffaqiyatli",
     promocodeApplied: "Promokod qo'llandi",
     promocodeRemoved: "Promokod olib tashlandi",
@@ -571,5 +597,13 @@ mixin LocaleData {
     bonusProducts: "Bonus mahsulotlar",
     discountApplied: "Chegirma qo'llandi",
     promocodeDiscount: "Promokod bo'yicha chegirma",
+    promocodeGuestsOnly: "Bu promokod faqat mehmonlar uchun mavjud",
+    promocodeGroupRestricted:
+        "Bu promokod faqat ayrim mijoz guruhlari uchun",
+    bonusProductsUnavailable:
+        "Ushbu promokod uchun bonus mahsulotlar mavjud emas",
+    unsupportedPromocodeType: "Bu turdagi promokod qo'llab-quvvatlanmaydi",
+    promotionTime: "Aksiya vaqti",
+    otherTime: "Boshqa vaqtlar",
   };
 }

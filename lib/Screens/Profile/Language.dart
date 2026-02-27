@@ -101,19 +101,19 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                               Language.setLanguage('ru');
                                               Get.offAll(() => MenuScreen());
                                             } else if (!subscribed) {
-                                              Language.setLanguage('en');
+                                              Language.setLanguage('ru');
                                               Get.offAll(() => MenuScreen());
                                             } else {
                                               Language.setLanguage('ru');
                                               Navigator.pop(context);
                                             }
 
-                                            unsubscribeFromAllTopics();
+                                            await unsubscribeFromAllTopics();
                                             await FirebaseMessaging.instance
                                                 .subscribeToTopic(
                                                     "all_users_ru");
                                             Maillinglist.subscribe(
-                                                "all_users_ri");
+                                                "all_users_ru");
                                           },
                                           child: Row(
                                             children: [
@@ -156,7 +156,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                               Navigator.pop(context);
                                             }
 
-                                            unsubscribeFromAllTopics();
+                                            await unsubscribeFromAllTopics();
                                             await FirebaseMessaging.instance
                                                 .subscribeToTopic(
                                                     "all_users_en");
@@ -197,7 +197,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                               Language.setLanguage('uz');
                                               Get.offAll(() => MenuScreen());
                                             } else if (!subscribed) {
-                                              Language.setLanguage('en');
+                                              Language.setLanguage('uz');
                                               Get.offAll(() => MenuScreen());
                                             } else {
                                               Language.setLanguage('uz');
@@ -205,7 +205,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                             }
 
                                             //"all_users_uz
-                                            unsubscribeFromAllTopics();
+                                            await unsubscribeFromAllTopics();
                                             await FirebaseMessaging.instance
                                                 .subscribeToTopic(
                                                     "all_users_uz");

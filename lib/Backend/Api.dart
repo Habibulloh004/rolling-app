@@ -37,7 +37,7 @@ class Api {
 // Updated getPromotions method to return the correct format
   static Future<List<dynamic>> getPromotions() async {
     try {
-      final response = await getPosterData('clients.getPromotions', '', 600);
+      final response = await getPosterData('clients.getPromotions', '', 0);
       if (response['response'] != null) {
         return response['response'];
       }
@@ -62,6 +62,28 @@ class Api {
       print('Error fetching client info: $e');
       return {};
     }
+  }
+
+  static Future<Map<String, dynamic>?> getPosterClient(String clientId) async {
+    if (clientId.isEmpty) return null;
+    try {
+      final response = await dio.get(
+        '$posterUrl/api/clients.getClients?token=$posterToken&client_id=$clientId&limit=1',
+      );
+
+      final data = response.data;
+      if (data is Map && data['response'] is List && data['response'].isNotEmpty) {
+        final first = data['response'][0];
+        if (first is Map) {
+          return first.map(
+            (key, value) => MapEntry(key.toString(), value),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error fetching poster client: $e');
+    }
+    return null;
   }
 
 // Method to validate birthday for birthday promocodes

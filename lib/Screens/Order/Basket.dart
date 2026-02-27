@@ -64,6 +64,11 @@ class _BasketScreenState extends State<BasketScreen> {
         Api.getAllCategories(),
       ]);
 
+      promocodeStore.cacheBackendData(
+        productsData: results[1],
+        categoriesData: results[2],
+      );
+
       setState(() {
         promotions = results[0];
         productsData = results[1];
@@ -236,17 +241,13 @@ class _BasketScreenState extends State<BasketScreen> {
       final orderPriceInt = Order.getOrderPrice()['int'] ?? 0;
       final promocodeDiscount = promocodeStore.getTotalDiscount();
       final promocodePrice = promocodeStore.promocodePrice.value;
+      final hasPromo = promocodeStore.hasActivePromocode();
+      final discountAmount = hasPromo
+          ? promocodeStore.getDiscountAmount(orderPriceInt.toDouble())
+          : 0.0;
 
-      double finalPrice = orderPriceInt.toDouble() + deliveryPriceInt;
-
-      // Apply promocode discount - matching JSX logic
-      if (promocodePrice > 0) {
-        finalPrice -= promocodePrice;
-      } else if (promocodeDiscount > 0) {
-        // Apply percentage discount only to order price, not delivery
-        double discountAmount = orderPriceInt * (promocodeDiscount / 100);
-        finalPrice = orderPriceInt - discountAmount + deliveryPriceInt;
-      }
+      double finalPrice =
+          orderPriceInt.toDouble() - discountAmount + deliveryPriceInt;
 
       // Ensure price doesn't go below delivery cost
       finalPrice = finalPrice.clamp(deliveryPriceInt.toDouble(), double.infinity);
@@ -525,6 +526,14 @@ class _BasketScreenState extends State<BasketScreen> {
       (index) {
         final orderItem = Order.getOrderAt(index);
         final isPromoItem = orderItem['promocode'] == true;
+        final String productName = (orderItem['name'] ?? '').toString();
+        final String productDescription =
+            (orderItem['description'] ?? '').toString();
+        final String productTitle = productName.isNotEmpty
+            ? productName
+            : (productDescription.isNotEmpty
+                ? splitText(productDescription)
+                : '');
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -619,10 +628,7 @@ class _BasketScreenState extends State<BasketScreen> {
                       ],
                     ),
                     Text(
-                      // ✅ Fixed: Use splitText for product descriptions
-                      isPromoItem && orderItem['description'] != null && orderItem['description'].toString().isNotEmpty
-                          ? splitText(orderItem['description']) // Use splitText for product descriptions
-                          : orderItem['name'] ?? '', // Fallback to regular name
+                      productTitle,
                       style: TextStyle(
                         fontSize: 17,
                         color: cDarkGreen,

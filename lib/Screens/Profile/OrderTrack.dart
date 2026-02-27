@@ -320,6 +320,14 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
     result = List.generate(data.length, (index) {
       final productData = data[index];
       final isPromoItem = productData['promocode'] == true;
+      final String productName = (productData['name'] ?? '').toString();
+      final String productDescription =
+          (productData['description'] ?? '').toString();
+      final String productTitle = productName.isNotEmpty
+          ? productName
+          : (productDescription.isNotEmpty
+              ? splitText(productDescription)
+              : '');
 
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
@@ -397,10 +405,7 @@ class _OrderTrackScreenState extends State<OrderTrackScreen> {
                     ],
                   ),
                   Text(
-                    // ✅ Fixed: Use splitText for product descriptions
-                    isPromoItem && productData['description'] != null && productData['description'].toString().isNotEmpty
-                        ? splitText(productData['description']) // Use splitText for product descriptions
-                        : productData['name'] ?? '', // Fallback to regular name
+                    productTitle,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(

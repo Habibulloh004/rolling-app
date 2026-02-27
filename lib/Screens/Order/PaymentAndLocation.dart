@@ -1347,30 +1347,30 @@ class _PaymentAndLocationScreenState extends State<PaymentAndLocationScreen>
                   5.0), // Adjust for the desired curvature
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment
-                  .spaceBetween, // Use min to wrap content size
               children: <Widget>[
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      color: cWhite,
-                    ),
-                    SizedBox(width: 10.w),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.6, // Increased width to show more text
-                      child: Text(
-                        name, // Show full address name
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.0, // Slightly smaller font to fit more text
-                        ),
-                        maxLines: 3, // Allow multiple lines for long addresses
-                        overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: cWhite,
                       ),
-                    ),
-                  ],
-                ), // Space between text and icon
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Text(
+                          name, // Show full address name
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.0, // Slightly smaller font to fit more text
+                          ),
+                          maxLines: 3, // Allow multiple lines for long addresses
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 12.w),
                 Container(
                   width: 24,
                   height: 24,

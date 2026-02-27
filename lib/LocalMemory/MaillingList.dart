@@ -196,7 +196,8 @@ class Maillinglist {
       box.put(_fcmTokenKey, token);
       box.put(_lastUpdateKey, DateTime.now().millisecondsSinceEpoch);
       
-      print('✅ FCM token stored: ${token.substring(0, 20)}...');
+      // Log full token when storing for debugging
+      print('✅ FCM token stored (full): $token');
       return true;
     } catch (e) {
       print('❌ Error storing FCM token: $e');

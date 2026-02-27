@@ -26,7 +26,7 @@ import 'Screens/Profile/Language.dart';
 import 'Store/PromocodeStore.dart';
 import 'firebase_options.dart';
 
-// const String SERVER_URL = 'http://192.168.1.41:3000';
+// const String SERVER_URL = 'http://192.168.1.9:8000';
 const String SERVER_URL = 'https://sushiserver.onrender.com';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -459,6 +459,7 @@ Future<void> sendTokenToServer(String token) async {
     }
     
     print('📤 Registering token with server...');
+    print('🔑 Full FCM token: $token');
     print('🔑 Token: ${token.substring(0, 20)}...');
     print('🌍 Language: $language');
     
@@ -670,6 +671,7 @@ Future<void> subscribeToTopics() async {
 
     final prefs = await SharedPreferences.getInstance();
     final currentToken = prefs.getString('fcm_token');
+    final previousLanguage = prefs.getString('topic_language');
     
     if (currentToken == null) {
       print('❌ No FCM token available for topic subscription');
@@ -687,17 +689,32 @@ Future<void> subscribeToTopics() async {
       print('⚠️ Error getting language for topic subscription, using default: $e');
       language = 'ru';
     }
-    
+
+    const supportedLanguages = ['en', 'ru', 'uz'];
+
+    for (final code in supportedLanguages) {
+      if (code == language) continue;
+      try {
+        await messaging.unsubscribeFromTopic('all_users_$code');
+        print('✅ Unsubscribed from topic: all_users_$code');
+      } catch (e) {
+        print('⚠️ Error unsubscribing from all_users_$code: $e');
+      }
+    }
+
     await messaging.subscribeToTopic('all_users_$language');
     print('✅ Subscribed to topic: all_users_$language');
     
     try {
-      await updateTokenLanguage(currentToken, language);
+      if (previousLanguage != language) {
+        await updateTokenLanguage(currentToken, language);
+      }
     } catch (e) {
       print('⚠️ Warning: Could not update token language on server: $e');
     }
     
     await prefs.setInt('last_topic_subscription', DateTime.now().millisecondsSinceEpoch);
+    await prefs.setString('topic_language', language);
     
   } catch (e) {
     print('❌ Error subscribing to topics: $e');
@@ -1165,23 +1182,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
+        final colorScheme = ColorScheme.fromSeed(
+          seedColor: const Color(0xff004032),
+        );
         return GetMaterialApp(
           title: 'Rolling Sushi',
           theme: ThemeData(
             primaryColor: const Color(0xff004032),
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xff004032),
-            ),
+            colorScheme: colorScheme,
+            scaffoldBackgroundColor: colorScheme.surface,
             useMaterial3: true,
             fontFamily: 'SF Pro Display',
-            appBarTheme: const AppBarTheme(
-              backgroundColor: cWhite,
-              foregroundColor: Color(0xff004032),
+            appBarTheme: AppBarTheme(
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: const Color(0xff004032),
               elevation: 0,
-              iconTheme: IconThemeData(
+              iconTheme: const IconThemeData(
                 color: Color(0xff004032),
               ),
-              titleTextStyle: TextStyle(
+              titleTextStyle: const TextStyle(
                 color: Color(0xff004032),
                 fontSize: 20,
                 fontWeight: FontWeight.w600,

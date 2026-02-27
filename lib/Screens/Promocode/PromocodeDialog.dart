@@ -1,15 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:get/get.dart';
-import 'package:sushi_alpha_project/Consts/Colors.dart';
-import '../../Backend/Api.dart';
-import '../../LocalMemory/Order.dart';
-import '../../LocalMemory/User.dart';
-import '../../Models/Promocode.dart';
-import '../../Store/PromocodeStore.dart';
-import '../../Consts/Functions.dart';
+
+import '../../Consts/Colors.dart';
 import '../../Localzition/locals.dart';
+import '../../Store/PromocodeStore.dart';
 
 class PromocodeDialog extends StatefulWidget {
   final List<dynamic> promotions;
@@ -31,19 +26,44 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
   final TextEditingController promoCodeController = TextEditingController();
   final PromocodeStore promocodeStore = Get.find<PromocodeStore>();
   String? errorMessage;
-  double promotionPrice = 0;
-  double promotionDiscount = 0;
   bool isLoading = false;
+  late List<dynamic> _promotionsCache;
+
+  List<dynamic> _normalizePromotions(dynamic raw) {
+    if (raw is List) return raw;
+    if (raw is Map && raw['response'] is List) {
+      return raw['response'] as List<dynamic>;
+    }
+    if (raw == null) return const [];
+    return [raw];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _promotionsCache = [];
+    try {
+      _promotionsCache = _normalizePromotions(widget.promotions);
+      promocodeStore.cacheBackendData(
+        productsData: widget.productsData,
+        categoriesData: widget.categoriesData,
+      );
+    } catch (e) {
+      print('Error initializing promocode dialog: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    promoCodeController.dispose();
+    super.dispose();
+  }
 
   void handleRemovePromo() {
-    // Call the correct method name from PromocodeStore
     promocodeStore.handleRemovePromo();
     promoCodeController.clear();
-
-    // Clear local state
     setState(() {
-      promotionPrice = 0;
-      promotionDiscount = 0;
+      errorMessage = null;
     });
 
     Get.back(result: 'removed');
@@ -79,91 +99,42 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     });
 
     try {
-      // Get promotions data properly
-      List<dynamic> promotionsList = [];
+      String? successMessage;
+      String? localError;
 
-      if (widget.promotions is Map && (widget.promotions as Map)['response'] != null) {
-        promotionsList = (widget.promotions as Map)['response'];
-      } else if (widget.promotions is List) {
-        promotionsList = widget.promotions;
-      } else {
-        promotionsList = [widget.promotions];
-      }
-
-      // Find matching promotion
-      final findPromo = promotionsList.firstWhere(
-            (promo) {
-          if (promo == null) return false;
-
-          final promoName = promo['name']?.toString() ?? '';
-
-          // Extract promo code from name (format: "Description $CODE")
-          String promoCodeFromName = '';
-          if (promoName.contains('\$')) {
-            final parts = promoName.split('\$');
-            if (parts.length > 1) {
-              promoCodeFromName = parts[1].trim();
-            }
-          }
-
-          return promoCodeFromName.toLowerCase() == promoCode.toLowerCase();
+      final applied = await promocodeStore.applyPromocode(
+        promoCode,
+        _promotionsCache,
+        widget.productsData,
+        widget.categoriesData,
+        (message) {
+          localError = message;
         },
-        orElse: () => null,
+        (message) {
+          successMessage = message;
+        },
       );
-
-      if (findPromo == null) {
-        setState(() {
-          errorMessage = LocaleData.invalidPromocode.getString(context);
-          isLoading = false;
-        });
-        return;
-      }
-
-      final promocode = Promocode.fromJson(findPromo);
-
-      // Check if auth is required
-      if (promocode.params?.clientsType == 3 && !User.isKeyAvalible('id')) {
-        setState(() {
-          errorMessage = LocaleData.authRequiredForPromocode.getString(context);
-          isLoading = false;
-        });
-        return;
-      }
-
-      // Validate conditions
-      bool isValid = await validatePromocodeConditions(promocode);
-
-      if (!isValid) {
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
-
-      // Apply promocode based on type
-      final bool applied = await applyPromocode(promocode);
-
-      if (!applied) {
-        // Application failed (e.g., not birthday / not first order)
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
 
       setState(() {
         isLoading = false;
+        errorMessage = localError;
       });
 
-      Get.back(result: 'applied'); // Return result to refresh basket
-      Get.snackbar(
-        LocaleData.success.getString(context),
-        LocaleData.promocodeApplied.getString(context),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-
+      if (applied) {
+        promoCodeController.clear();
+        Get.back(result: 'applied');
+        Get.snackbar(
+          LocaleData.success.getString(context),
+          successMessage ?? LocaleData.promocodeApplied.getString(context),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else if (localError == null || localError!.isEmpty) {
+        setState(() {
+          errorMessage = LocaleData.errorApplyingPromocode.getString(context);
+        });
+      }
     } catch (e) {
       print('Error applying promocode: $e');
       setState(() {
@@ -173,226 +144,13 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
     }
   }
 
-  Future<bool> validatePromocodeConditions(Promocode promocode) async {
-    final conditions = promocode.params?.conditions ?? [];
-    final totalSum = Order.getOrderPrice()['int'] ?? 0;
-
-    for (final condition in conditions) {
-      switch (condition.type) {
-        case 0: // All products
-          final requiredSum = (condition.sum ?? 0) ~/ 100; // Convert from kopecks to sums
-          if (totalSum < requiredSum) {
-            setState(() {
-              errorMessage = '${LocaleData.minimumOrderAmount.getString(context)}: ${makePriceSomString(requiredSum)} ${LocaleData.som.getString(context)}';
-            });
-            return false;
-          }
-          break;
-
-        case 1: // Category
-          final categoryProducts = Order.getFullOrder().where((order) {
-            final product = widget.productsData.firstWhere(
-                  (p) => p['product_id'].toString() == order['productId'],
-              orElse: () => null,
-            );
-            return product != null &&
-                product['menu_category_id'].toString() == condition.id;
-          }).toList();
-
-          if (categoryProducts.isEmpty) {
-            final category = widget.categoriesData.firstWhere(
-                  (c) => c['category_id'].toString() == condition.id,
-              orElse: () => null,
-            );
-            final categoryName = category != null
-                ? splitText(category['category_name'])
-                : LocaleData.category.getString(context).toLowerCase();
-            setState(() {
-              errorMessage = '${LocaleData.addProductsFrom.getString(context)} $categoryName';
-            });
-            return false;
-          }
-          break;
-
-        case 2: // Specific product
-          final hasProduct = Order.isInOrder(condition.id ?? '');
-          if (!hasProduct) {
-            final product = widget.productsData.firstWhere(
-                  (p) => p['product_id'].toString() == condition.id,
-              orElse: () => null,
-            );
-            final productName = product != null
-                ? product['product_name']
-                : LocaleData.products.getString(context).toLowerCase();
-            setState(() {
-              errorMessage = '${LocaleData.addProductToCart.getString(context)} $productName';
-            });
-            return false;
-          }
-          break;
-      }
-    }
-
-    return true;
-  }
-
-  // Fix for lib/Screens/Promocode/PromocodeDialog.dart
-
-  Future<bool> applyPromocode(Promocode promocode) async {
-    switch (promocode.params?.resultType) {
-      case 1: // Bonus products
-        final bonusProductIds = promocode.params?.bonusProducts ?? [];
-
-        for (final bonusProduct in bonusProductIds) {
-          final productData = widget.productsData.firstWhere(
-                (p) => p['product_id'].toString() == bonusProduct.id,
-            orElse: () => null,
-          );
-
-          if (productData != null) {
-            // ✅ Fixed: Store description for translation and use splitTextFromCategory for display name
-            final rawDescription = productData['product_production_description']?.toString() ?? '';
-            
-            // Add to order using your existing Order class
-            Map<String, dynamic> orderData = {
-              'productId': productData['product_id'].toString(),
-              'name': splitText(rawDescription.isNotEmpty ? rawDescription : productData['product_name'] ?? ''), // Use splitText
-              'description': rawDescription, // Store raw description for translation
-              'ingredients': '',
-              'price': '0', // Bonus product is free
-              'weight': productData['out']?.toString() ?? '',
-              'photo': productData['photo_origin'] != null
-                  ? "https://rolling-sushi.joinposter.com${productData['photo_origin']}"
-                  : '',
-              'promocode': true,
-              'amount': promocode.params?.bonusProductsPcs?.toString() ?? '1',
-            };
-
-            Order.setOrder(productData['product_id'].toString(), orderData);
-          }
-        }
-        promocodeStore.setPromocode(promocode);
-        return true;
-
-      case 2: // Fixed discount
-        final discount = ((promocode.params?.discountValue ?? 0) / 100).toDouble();
-
-        promocodeStore.setPromocodePrice(discount);
-        promocodeStore.setPromocode(promocode);
-        setState(() {
-          promotionPrice = discount;
-        });
-        return true;
-
-      case 3: // Percentage discount
-        final discountPercent = promocode.params?.discountValue?.toDouble() ?? 0;
-
-        // Check for special promocodes
-        final promocodeName = promocode.name?.split('\$').last?.toLowerCase() ?? '';
-
-        if (promocodeName == 'bday20') {
-          final isValidBirthday = await checkBirthday();
-          if (!isValidBirthday) {
-            setState(() {
-              errorMessage = LocaleData.promocodeValidOnlyOnBirthday.getString(context);
-            });
-            return false;
-          }
-        }
-
-        if (promocodeName == 'first20') {
-          final isFirstOrder = await checkFirstOrder();
-          if (!isFirstOrder) {
-            setState(() {
-              errorMessage = LocaleData.promocodeValidOnlyForFirstOrder.getString(context);
-            });
-            return false;
-          }
-        }
-
-        // Apply the discount
-        promocodeStore.setDiscountPromocode(discountPercent);
-        promocodeStore.setPromocode(promocode);
-        setState(() {
-          promotionDiscount = discountPercent;
-        });
-        return true;
-    }
-
-    // Unknown result type
-    setState(() {
-      errorMessage = LocaleData.errorApplyingPromocode.getString(context);
-    });
-    return false;
-  }
-
-  Future<bool> checkBirthday() async {
-    try {
-      final clientInfo = await Api.getClient(
-        User.getUserInfo('phone'),
-        User.getUserInfo('password'),
-      );
-
-      if (clientInfo['res'] != true) return false;
-
-      final birthdayStr = clientInfo['birthday'];
-      if (birthdayStr == null || birthdayStr.isEmpty) return false;
-
-      final birthday = DateTime.tryParse(birthdayStr);
-      if (birthday == null) return false;
-
-      final today = DateTime.now();
-      
-      // Match JSX logic exactly: compare month and day
-      return today.month == birthday.month && today.day == birthday.day;
-    } catch (e) {
-      print('Error validating birthday: $e');
-      return false;
-    }
-  }
-
-  Future<bool> checkFirstOrder() async {
-    try {
-      final clientInfo = await Api.getClient(
-        User.getUserInfo('phone'),
-        User.getUserInfo('password'),
-      );
-
-      if (clientInfo['res'] != true) return false;
-
-      final comment = clientInfo['comment'];
-      
-      // Match JSX logic: if comment is null, it's first order
-      if (comment == null) return true;
-
-      Map<String, dynamic> commentData;
-      try {
-        if (comment is String) {
-          commentData = jsonDecode(comment);
-        } else {
-          commentData = comment;
-        }
-      } catch (e) {
-        // If can't parse comment, consider as first order
-        return true;
-      }
-
-      // Match JSX logic: check for both null/missing length AND zero length
-      final lengthValue = commentData['length'];
-      if (lengthValue == null) return true; // No length property = first order
-      
-      final orderLength = int.tryParse(lengthValue.toString()) ?? 0;
-      return orderLength == 0; // Zero length = first order
-    } catch (e) {
-      print('Error checking first order: $e');
-      return true; // Default to allowing first order promocode on error
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hasActivePromo = promocodeStore.activePromocode.value != null;
+      final appliedPromo = promocodeStore.activePromocode.value;
+      final hasActivePromo = appliedPromo != null;
+      final appliedName = promocodeStore.getPromocodeName();
+      final appliedDescription = promocodeStore.getPromocodeDescription();
 
       return Container(
         padding: const EdgeInsets.all(20),
@@ -404,8 +162,8 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              hasActivePromo 
-                  ? LocaleData.activePromocode.getString(context) 
+              hasActivePromo
+                  ? LocaleData.activePromocode.getString(context)
                   : LocaleData.enterPromocode.getString(context),
               style: const TextStyle(
                 fontSize: 20,
@@ -414,7 +172,6 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
               ),
             ),
             const SizedBox(height: 20),
-
             if (hasActivePromo) ...[
               Container(
                 padding: const EdgeInsets.all(15),
@@ -432,13 +189,16 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            promocodeStore.getPromocodeName(),
+                            appliedName.isNotEmpty
+                                ? appliedName
+                                : LocaleData.promocode.getString(context),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: cDarkGreen,
                             ),
                           ),
-                          Text(promocodeStore.getPromocodeDescription()),
+                          if (appliedDescription.isNotEmpty)
+                            Text(appliedDescription),
                         ],
                       ),
                     ),
@@ -468,36 +228,6 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                 },
               ),
               const SizedBox(height: 20),
-
-              // Show discount info if available
-              if (promotionPrice > 0 || promotionDiscount > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.celebration, color: Colors.green),
-                      const SizedBox(width: 10),
-                      Text(
-                        promotionPrice > 0
-                            ? '${LocaleData.discount.getString(context)} ${promotionPrice.toStringAsFixed(0)} ${LocaleData.som.getString(context)}'
-                            : '${LocaleData.discount.getString(context)} ${promotionDiscount.toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-
               Row(
                 children: [
                   Expanded(
@@ -512,20 +242,20 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
                       ),
                       child: isLoading
                           ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : Text(
-                        LocaleData.apply.getString(context),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
+                              LocaleData.apply.getString(context),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -543,11 +273,5 @@ class _PromocodeDialogState extends State<PromocodeDialog> {
         ),
       );
     });
-  }
-
-  @override
-  void dispose() {
-    promoCodeController.dispose();
-    super.dispose();
   }
 }

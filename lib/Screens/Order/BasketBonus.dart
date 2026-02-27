@@ -12,6 +12,7 @@ import '../../LocalMemory/Bonus.dart';
 import '../../LocalMemory/Order.dart';
 import '../../LocalMemory/User.dart';
 import '../../Localzition/locals.dart';
+import '../../Store/PromocodeStore.dart';
 import '../Authentication/RegistrationScreen.dart';
 import '../Menu/Menu.dart';
 import 'PaymentAndLocation.dart';
@@ -26,6 +27,12 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
   final TextEditingController bonusController = TextEditingController();
   int bonus = 0;
   String bonusString = '';
+
+  void _revalidatePromocodeIfNeeded() {
+    if (Get.isRegistered<PromocodeStore>()) {
+      Get.find<PromocodeStore>().validatePromocodeOnCartChange();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
@@ -244,6 +251,14 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
       (index) {
         final orderItem = Order.getOrderAt(index);
         final isPromoItem = orderItem['promocode'] == true;
+        final String productName = (orderItem['name'] ?? '').toString();
+        final String productDescription =
+            (orderItem['description'] ?? '').toString();
+        final String productTitle = productName.isNotEmpty
+            ? productName
+            : (productDescription.isNotEmpty
+                ? splitText(productDescription)
+                : '');
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -338,10 +353,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                       ],
                     ),
                     Text(
-                      // ✅ Fixed: Use splitText for product descriptions
-                      isPromoItem && orderItem['description'] != null && orderItem['description'].toString().isNotEmpty
-                          ? splitText(orderItem['description']) // Use splitText for product descriptions
-                          : orderItem['name'] ?? '', // Fallback to regular name
+                      productTitle,
                       style: TextStyle(
                         fontSize: 17,
                         color: cDarkGreen,
@@ -407,6 +419,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                                           } else {
                                             Order.deleteOrderAt(index);
                                           }
+                                          _revalidatePromocodeIfNeeded();
                                         });
                                       },
                                     ),
@@ -442,6 +455,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                                           if (amount <= 10) {
                                             orderItem['amount'] = '${amount}';
                                           }
+                                          _revalidatePromocodeIfNeeded();
                                         });
                                       },
                                     ),
@@ -481,6 +495,7 @@ class _BasketBonusScreenState extends State<BasketBonusScreen> {
                               if (Order.getOrderLength() == 0) {
                                 Get.offAll(() => MenuScreen());
                               }
+                              _revalidatePromocodeIfNeeded();
                             });
                           },
                           child: Container(
